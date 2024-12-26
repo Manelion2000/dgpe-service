@@ -297,9 +297,9 @@ public class ParamController {
     }
 
     /**
-     * Fonction permettant de retourner un tableau de Byte d'un document de contribution
-     * @param idDoc
-     * @return
+     * Fonction permettant de retourner un tableau de Byte d'un document
+     * @param idDoc : id de document
+     * @return un tableau de Byte
      */
 
     @GetMapping(BaConstants.URL.DOCUMENT + "/lecture/{idDoc}")
@@ -332,7 +332,6 @@ public class ParamController {
 
     /**
      * Archive une mission diplomatique.
-     *
      * @param id l'identifiant de la mission à archiver.
      */
     @PatchMapping(BaConstants.URL.MISSION+"/id")
@@ -360,5 +359,106 @@ public class ParamController {
     @GetMapping(BaConstants.URL.MISSION +"/{id}")
     public ResponseEntity<BaMissionDiplomatiqueDto> getMissionById(@PathVariable final String id) {
         return new ResponseEntity<>(paramService.getMissionById(id), HttpStatus.OK);
+    }
+
+    /**
+     * Fonction de création d'un personnel
+     * @param file        : fichier
+     * @param personnelDto DTO Document
+     * @return BaPersonneDgpeDto
+     */
+    @PostMapping(BaConstants.URL.PERSONNEL)
+    public ResponseEntity<BaPersonneDgpeDto> savePersonnel(
+            @RequestPart("file") final MultipartFile file,
+            @RequestPart("personnelDto") final @Valid BaPersonneDgpeDto personnelDto) {
+
+        try {
+            BaPersonneDgpeDto savedDto = paramService.savePersonnel(file, personnelDto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedDto);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
+        }
+    }
+
+    /**
+     * Met à jour un personnel.
+     * @param id: id de l'utilisateur
+     * @param personnelDto: personnelDto
+     * @return une Dto de mise de personnel
+     */
+    @PutMapping(BaConstants.URL.PERSONNEL+"/{id}")
+    public ResponseEntity<BaPersonneDgpeDto> updatePersonnel(
+            @PathVariable("id") final String id,
+            @RequestBody final BaPersonneDgpeDto personnelDto) {
+        BaPersonneDgpeDto updatedDto = paramService.updatePersonnel(id, personnelDto);
+        return ResponseEntity.ok(updatedDto);
+    }
+
+    /**
+     * Met à jour un personnel.
+     * @param id: id de l'utilisateur
+     * @param personnelDto: personnelDto
+     * @return une Dto de mise de personnel
+     */
+    @PatchMapping(BaConstants.URL.PERSONNEL+"/{id}")
+    public ResponseEntity<BaPersonneDgpeDto> archiverPersonnel(
+            @PathVariable("id") final String id,
+            @RequestBody final BaPersonneDgpeDto personnelDto) {
+        BaPersonneDgpeDto updatedDto = paramService.archiverPersonnel(id, personnelDto);
+        return ResponseEntity.ok(updatedDto);
+    }
+
+    /**
+     * Supprime un personnel.
+     * @param id: id du personnel
+     * @return rien
+     */
+    @DeleteMapping(BaConstants.URL.PERSONNEL+"/{id}")
+    public ResponseEntity<Void> deletePersonnel(@PathVariable("id") final String id) {
+        paramService.deletePersonnel(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Récupère tous les personnels
+     * @return une liste de personnel
+     */
+    @GetMapping(BaConstants.URL.PERSONNEL)
+    public ResponseEntity<List<BaPersonneDgpeDto>> getAllPersonnel() {
+        List<BaPersonneDgpeDto> personnelList = paramService.getAllPersonnel();
+        return ResponseEntity.ok(personnelList);
+    }
+
+    /**
+     * Récupère tous les personnels
+     * @return une liste de personnel archivé
+     */
+    @GetMapping(BaConstants.URL.PERSONNEL+"/archive")
+    public ResponseEntity<List<BaPersonneDgpeDto>> getAllPersonnelArchive() {
+        List<BaPersonneDgpeDto> personnelList = paramService.getAllPersonnelArchiver();
+        return ResponseEntity.ok(personnelList);
+    }
+
+    /**
+     * Récupère un personnel par ID.
+     * @param id: id de l'utilisateur
+     * @return un personnel
+     */
+    @GetMapping(BaConstants.URL.PERSONNEL+"/{id}")
+    public ResponseEntity<BaPersonneDgpeDto> getPersonnelById(@PathVariable("id") final String id) {
+        BaPersonneDgpeDto personnelDto = paramService.getPersonnelById(id);
+        return ResponseEntity.ok(personnelDto);
+    }
+
+    /**
+     * Fonction permettant de retourner un tableau de Byte du personnel
+     * @param idDoc : id de document du personnel
+     * @return un tableau de Byte
+     */
+
+    @GetMapping(BaConstants.URL.PERSONNEL + "/lecture/{idDoc}")
+    public ResponseEntity<byte[]> lireDocumentPersonnel(@PathVariable final String idDoc) {
+        return new ResponseEntity<>(fileStorage.getPhotoPersonnel(idDoc), HttpStatus.OK);
     }
 }

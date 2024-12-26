@@ -21,6 +21,7 @@ public class BaConstants {
         public static final String PRODUCT = "/products";
         public static final String DEMANDE="/demandes";
         public static final String MISSION="/missions";
+        public static final String PERSONNEL="/personnels";
     }
 
     /**

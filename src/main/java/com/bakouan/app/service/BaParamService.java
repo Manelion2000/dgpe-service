@@ -78,4 +78,16 @@ public interface BaParamService {
     BaMissionDiplomatiqueDto getMissionById(String id);
 
     BaPersonneDgpeDto savePersonnel(MultipartFile file, BaPersonneDgpeDto personnelDto);
+
+    BaPersonneDgpeDto updatePersonnel(String id, BaPersonneDgpeDto personnelDto);
+
+    BaPersonneDgpeDto archiverPersonnel(String id, BaPersonneDgpeDto personnelDto);
+
+    void deletePersonnel(String id);
+
+    List<BaPersonneDgpeDto> getAllPersonnel();
+
+    List<BaPersonneDgpeDto> getAllPersonnelArchiver();
+
+    BaPersonneDgpeDto getPersonnelById(String id);
 }

@@ -1,7 +1,9 @@
 package com.bakouan.app.service;
 
 import com.bakouan.app.model.BaDocument;
+import com.bakouan.app.model.BaPersonnelDgpe;
 import com.bakouan.app.repositories.BaDocumentRepository;
+import com.bakouan.app.repositories.BaPersonnelRepository;
 import com.bakouan.app.utils.BaUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,7 @@ public class BaFileStorageService {
     private String basePath;
     private static final Set<String> IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png");
     private final BaDocumentRepository baDocumentRepository;
+    private final BaPersonnelRepository baPersonnelRepository;
 
     /**
      * Récupérer le contenu d'un fichier.
@@ -66,6 +69,34 @@ public class BaFileStorageService {
                 HttpStatus.BAD_REQUEST, "Le document introuvable avec id" +idDoc));
         // Construire le chemin complet du fichier
         String fullPath = basePath + File.separator + document.getUrl();
+        File file = new File(fullPath);
+
+        try {
+            // Vérifier si le fichier existe
+            if (file.exists()) {
+                log.info("Chargement du fichier : {}", fullPath);
+                return Files.readAllBytes(file.toPath());
+            } else {
+                log.warn("Fichier inexistant au chemin : {}", fullPath);
+                throw new FileNotFoundException("Le fichier avec l'ID " + idDoc + " n'existe pas dans le répertoire " + basePath);
+            }
+        } catch (IOException e) {
+            log.error("Erreur lors de la lecture du fichier : " + idDoc, e);
+            throw new RuntimeException("Erreur de lecture du fichier " + idDoc, e);
+        }
+    }
+
+    /**
+     * Récupérer le contenu d'un fichier.
+     *
+     * @param idDoc identifiant du fichier.
+     * @return un tableau de byte
+     */
+    public byte[] getPhotoPersonnel(final String idDoc) {
+        BaPersonnelDgpe personnel= baPersonnelRepository.findById(idDoc).orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "Le personnel avec id" +idDoc));
+        // Construire le chemin complet du fichier
+        String fullPath = basePath + File.separator + personnel.getUrl();
         File file = new File(fullPath);
 
         try {

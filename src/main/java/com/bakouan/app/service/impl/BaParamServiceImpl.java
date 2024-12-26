@@ -576,5 +576,83 @@ public BaDemandeDto getDemandeByid(String id) {
     }
 
 
+    /**
+     * Met à jour un personnel existant.
+     */
+    @Override
+    public BaPersonneDgpeDto updatePersonnel(final String id, final BaPersonneDgpeDto personnelDto) {
+        BaPersonnelDgpe existingPersonnel = baPersonnelRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Personnel non trouvé avec l'ID : " + id));
+
+        // Mettre à jour les champs nécessaires
+        existingPersonnel.setLibelle(personnelDto.getLibelle());
+        existingPersonnel.setFonction(personnelDto.getFonction());
+        existingPersonnel.setParagraphe1(personnelDto.getParagraphe1());
+        existingPersonnel.setParagraphe2(personnelDto.getParagraphe2());
+        existingPersonnel.setParagraphe3(personnelDto.getParagraphe3());
+        existingPersonnel.setParagraphe4(personnelDto.getParagraphe4());
+
+        BaPersonnelDgpe updated = baPersonnelRepository.save(existingPersonnel);
+
+        return mapper.maps(updated);
+    }
+
+    /**
+     * Fonction d'archivage d'un personnel
+     * @param id: id du personnel
+     * @param personnelDto: personnel DTO
+     * @return une personne mise à jour
+     */
+    @Override
+    public BaPersonneDgpeDto archiverPersonnel(final String id, final BaPersonneDgpeDto personnelDto) {
+        BaPersonnelDgpe existingPersonnel = baPersonnelRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Personnel non trouvé avec l'ID : " + id));
+
+        // Mettre à jour les champs nécessaires
+        existingPersonnel.setStatut(EStatut.D);
+
+        BaPersonnelDgpe updated = baPersonnelRepository.save(existingPersonnel);
+
+        return mapper.maps(updated);
+    }
+
+    /**
+     * Supprime un personnel par ID.
+     */
+    @Override
+    public void deletePersonnel(final String id) {
+        baPersonnelRepository.deleteById(id);
+    }
+
+    /**
+     * Récupère tous les personnels.
+     */
+    @Override
+    public List<BaPersonneDgpeDto> getAllPersonnel() {
+        return baPersonnelRepository.findByStatut(EStatut.A).stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Récupère tous les personnels archivés.
+     */
+    @Override
+    public List<BaPersonneDgpeDto> getAllPersonnelArchiver() {
+        return baPersonnelRepository.findByStatut(EStatut.D).stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Récupère un personnel par ID.
+     */
+    @Override
+    public BaPersonneDgpeDto getPersonnelById(final String id) {
+        BaPersonnelDgpe personnel = baPersonnelRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Personnel non trouvé avec l'ID : " + id));
+
+        return mapper.maps(personnel);
+    }
 
 }
