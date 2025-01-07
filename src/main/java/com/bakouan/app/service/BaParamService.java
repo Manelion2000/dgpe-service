@@ -1,11 +1,11 @@
 package com.bakouan.app.service;
 
-import com.bakouan.app.dto.BaDemandeDto;
-import com.bakouan.app.dto.BaDocumentDto;
-import com.bakouan.app.dto.BaMissionDiplomatiqueDto;
-import com.bakouan.app.dto.BaPersonneDgpeDto;
+import com.bakouan.app.dto.*;
+import com.bakouan.app.enums.ECarte;
+import com.bakouan.app.enums.EStatus;
 import com.bakouan.app.enums.ETypeDemandeur;
 import com.bakouan.app.model.BaDocument;
+import com.bakouan.app.model.BaPersonnelDgpe;
 import jakarta.validation.Valid;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,8 +36,9 @@ public interface BaParamService {
 
     List<BaDemandeDto> getDemandeSalonDiplomatique();
 
-    BaDemandeDto getDemandeByid(String id);
+    List<BaDemandeDto> getDemandeParTypeEtStatus(ECarte eCarte, EStatus eStatus);
 
+    BaDemandeDto getDemandeByid(String id);
 
     BaDemandeDto createDemande(BaDemandeDto demandeDto);
 
@@ -53,7 +54,13 @@ public interface BaParamService {
 
     BaDemandeDto rejeterDemandeParDg(String id, BaDemandeDto demandeDtoDto);
 
-    BaDocument saveDocument(MultipartFile file, BaDocumentDto documentDto, String idDemande);
+    BaDocument saveDocument(MultipartFile file, BaDocumentDto documentDto);
+
+    //BaDocument savePhotoPersonnel(MultipartFile file, BaDocumentDto documentDto);
+
+    BaPhotoPersonnelDto savePhotoPersonnel(MultipartFile file, BaPhotoPersonnelDto photoDto);
+
+    BaPersonneDgpeDto removeDocumentFromPersonnel(String demandeId, String documentId);
 
     List<BaDocumentDto> getDocumentsByDemande(String idDemande);
 
@@ -77,7 +84,7 @@ public interface BaParamService {
 
     BaMissionDiplomatiqueDto getMissionById(String id);
 
-    BaPersonneDgpeDto savePersonnel(MultipartFile file, BaPersonneDgpeDto personnelDto);
+    BaPersonneDgpeDto savePersonnel(BaPersonneDgpeDto personnelDto);
 
     BaPersonneDgpeDto updatePersonnel(String id, BaPersonneDgpeDto personnelDto);
 
@@ -90,4 +97,10 @@ public interface BaParamService {
     List<BaPersonneDgpeDto> getAllPersonnelArchiver();
 
     BaPersonneDgpeDto getPersonnelById(String id);
+
+    List<BaStatistiquesDto> getDemandesByStatus();
+
+    List<BaStatistiquesDto> getDemandesByCarte();
+
+    List<BaStatistiquesDto> getDemandesByMonth();
 }

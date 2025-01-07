@@ -3,6 +3,7 @@ package com.bakouan.app.dto;
 import com.bakouan.app.enums.EDocument;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -21,6 +22,8 @@ public class BaDocumentDto {
     private String numDocument;
 
     private String idDemande;
+
+    private  String idPersonnel;
 
     @NotNull(message="le type de document est obligatoire")
     private EDocument typeDocument;

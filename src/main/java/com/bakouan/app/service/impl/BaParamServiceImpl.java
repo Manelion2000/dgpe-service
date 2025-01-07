@@ -35,6 +35,7 @@ public class BaParamServiceImpl implements BaParamService {
     private final BaUserRepository baUserRepository;
     private final BaMissionDiplomatiqueRepository missionDiplomatiqueRepository;
     private final BaPersonnelRepository baPersonnelRepository;
+    private final BaPhotoPersonnelRepository baPhotoPersonnelRepository;
     private final YtMapper mapper = Mappers.getMapper(YtMapper.class);
     private final BaLogService logService;
     private final BaMailService mailService;
@@ -153,7 +154,20 @@ public List<BaDemandeDto> getAllDemandesArchive() {
                 .map(mapper::maps)
                 .collect(Collectors.toList());
     }
-
+    /**
+     * Retourne une liste de demandes par type de carte et statut.
+     *
+     * @param eCarte le type de carte.
+     * @param eStatus le statut des demandes.
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @Override
+    public List<BaDemandeDto> getDemandeParTypeEtStatus(ECarte eCarte, EStatus eStatus) {
+        return baDemandeRepository.findDemandeByCarteAndStatus(eCarte, eStatus)
+                .stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
     /**
      * Fonction permettant de rétourner une demande par son id
      * @param id: id de l'utilisateur
@@ -187,11 +201,27 @@ public BaDemandeDto getDemandeByid(String id) {
                 .orElseThrow(()->new ResponseStatusException(HttpStatus.BAD_REQUEST,"l'utilisateur introuvable "));
 
 
+        // Déterminer le type de carte et compter les demandes existantes
+        String typeCarte = (demandeDto.getECarte() == ECarte.CARTE_DIPLOMATIQUE) ? "D" : "A";
+        int annee = LocalDate.now().getYear();
+       // long sequence = baDemandeRepository.countDemandeByTypeAndYear(demandeDto.getEcarte(), annee) + 1;
+
+        // Générer un numéro de demande unique avec tentative de réessai
+        long sequence = baDemandeRepository.countDemandeByTypeAndYear(demandeDto.getECarte(), annee) + 1;
+        String numeroDemande;
+
+        do {
+            numeroDemande = BaUtils.generateNumeroDemande(typeCarte, sequence);
+            sequence++;
+        } while (baDemandeRepository.existsByNumeroDemande(numeroDemande));
+
         demande.setId(BaUtils.randomUUID());
+        demande.setNumeroDemande(numeroDemande);
         demande.setDateDemande(LocalDate.now());
         demande.setMissionDiplomatique(mission);
         demande.setUser(user);
         demande.setStatus(EStatus.ENCOURS);
+        demande.setECarte(demandeDto.getECarte());
         BaDemande savedDemande = baDemandeRepository.save(demande);
         return mapper.maps(savedDemande);
     }
@@ -213,7 +243,32 @@ public BaDemandeDto getDemandeByid(String id) {
         BaUser user = baUserRepository.findById(demandeDto.getIdUser())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cet utilisateur  n'existe pas"));
         demande.setUser(user);
-        demande.setStatus(EStatus.ENCOURS);
+
+        // Vérification de l'existence de la mission diplomatique
+        BaMissionDiplomatique mission = missionDiplomatiqueRepository.findById(demandeDto.getIdMissionDiplomatique())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La mission diplomatique est introuvable"));
+
+        // Mise à jour des champs de la demande
+        demande.setDateDemande(demandeDto.getDateDemande());
+        demande.setUser(user);
+        demande.setMissionDiplomatique(mission);
+
+        // Mise à jour des informations personnelles
+        demande.setNom(demandeDto.getNom());
+        demande.setPrenom(demandeDto.getPrenom());
+        demande.setDateNaissance(demandeDto.getDateNaissance());
+        demande.setLieuNaissance(demandeDto.getLieuNaissance());
+        demande.setEmail(demandeDto.getEmail());
+        demande.setAdresse(demandeDto.getAdresse());
+        demande.setTelephone(demandeDto.getTelephone());
+        demande.setProfession(demandeDto.getProfession());
+        //demande.setFonction(demandeDto.getFonction());
+        demande.setInstitution(demandeDto.getInstitution());
+        demande.setNomPrenom(demandeDto.getNomPrenom());
+        demande.setTelephoneAprevenir(demandeDto.getTelephoneAprevenir());
+        demande.setSexe(demandeDto.getSexe());
+        demande.setECarte(demandeDto.getECarte());
+        //demande.setStatus(EStatus.ENCOURS);
         BaDemande updatedDemande = baDemandeRepository.save(demande);
         return mapper.maps(updatedDemande);
 
@@ -356,32 +411,92 @@ public BaDemandeDto getDemandeByid(String id) {
     }
 
     /**
-     * Fonction d'ajout de document
+     * Fonction d'ajout de document à une demande
      *
      * @param file   : fichier
      * @param documentDto DTO Document
-     * @param idDemande: id de la demande
      */
 
     @Override
-    public BaDocument saveDocument(MultipartFile file, BaDocumentDto documentDto, String idDemande) {
+    public BaDocument saveDocument(MultipartFile file, BaDocumentDto documentDto) {
         // Enregistrement du fichier
         String filePath = baFileStorageService.saveFile(file);
-
+// Création du document avec les détails du DTO
+        BaDocument baDocument = mapper.maps(documentDto);
         // Création du libellé avec type de document et numéro de document
         String libelle = String.format("%s_%s", documentDto.getTypeDocument().name(), documentDto.getNumDocument());
-        BaDemande demande=baDemandeRepository.findById(idDemande).orElseThrow(
-                ()->new ResponseStatusException(HttpStatus.BAD_REQUEST,"la demande est introvable"));
+        // Récupérer la demande associée à partir de documentDto (si applicable)
+        if (documentDto.getIdDemande() != null) {
+            BaDemande demande = baDemandeRepository.findById(documentDto.getIdDemande())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "la demande est introuvable avec l'ID fourni."));
+            baDocument.setDemande(demande);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'ID de la demande est obligatoire pour enregistrer un document.");
+        }
+        baDocument.setId(BaUtils.randomUUID());
+        baDocument.setLibelle(libelle);
+        baDocument.setUrl(filePath);
+        baDocument.setTypeDocument(documentDto.getTypeDocument());
+        //baDocument.setDemande(demande);
+        return baDocumentRepository.save(baDocument);
 
-        // Création du document avec les détails du DTO
-        BaDocument maDocument = new BaDocument();
-        maDocument.setId(BaUtils.randomUUID());
-        maDocument.setLibelle(libelle);
-        maDocument.setUrl(filePath);
-        maDocument.setTypeDocument(documentDto.getTypeDocument());
-        maDocument.setDemande(demande);
-        return baDocumentRepository.save(maDocument);
+    }
 
+
+    @Override
+    public BaPhotoPersonnelDto savePhotoPersonnel(MultipartFile file, BaPhotoPersonnelDto photoDto) {
+        // Enregistrement du fichier
+        String filePath = baFileStorageService.saveFile(file);
+// Création du document avec les détails du DTO
+        BaPhotoPersonnel baPhoto = mapper.maps(photoDto);
+        // Récupérer le personnel associé à partir de documentDto (si applicable)
+        if (photoDto.getIdPersonnel() != null) {
+            BaPersonnelDgpe personnel = baPersonnelRepository.findById(photoDto.getIdPersonnel())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "le personnel est introuvable avec l'ID fourni."));
+            baPhoto.setPersonnel(personnel);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'ID du personnel est obligatoire pour enregistrer un document.");
+        }
+        baPhoto.setId(BaUtils.randomUUID());
+        baPhoto.setUrl(filePath);
+        baPhoto.setLibelle("photoPersonnel");
+        return mapper.maps(baPhotoPersonnelRepository.save(baPhoto));
+
+    }
+
+    /**
+     * Supprime un document d'un personnel.
+     * @param personnelId: identifiant du personnel
+     * @param documentId: identifiant du document
+     */
+    @Override
+    public BaPersonneDgpeDto removeDocumentFromPersonnel(String personnelId, String documentId) {
+        logService.log(new BaLogDto(EAction.D, "Suppression d'un document " + documentId + " d'un personnel " + personnelId));
+
+        // Vérifier l'existence de l'immatriculation
+        BaPersonnelDgpe personnel = baPersonnelRepository.findById(personnelId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "le personnel est introuvable avec l'ID fourni."));;
+
+        // Vérifier l'existence du document
+        BaPhotoPersonnel document = baPhotoPersonnelRepository.findById(documentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable"));
+
+        // Vérifier que le document est associé à un personnel
+        if (!personnel.getDocuments().contains(document)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le document n'est pas associé à ce personnel");
+        }
+
+        // Supprimer le document de l'ensemble des documents
+        personnel.getDocuments().remove(document);
+
+        // Supprimer le document de la base de données si nécessaire
+        baPhotoPersonnelRepository.delete(document);
+
+        // Sauvegarder le personnel mise à jour
+         BaPersonnelDgpe personnelDgpe=baPersonnelRepository.save(personnel);
+         return mapper.maps(personnelDgpe);
+
+        //logService.log(new BaLogDto(EAction.D, "Document supprimé avec succès de la demande"));
     }
 
     /**
@@ -555,20 +670,20 @@ public BaDemandeDto getDemandeByid(String id) {
 
     /**
      * Fonction de création d'un document rapport HCBE.
-     *
-     * @param file        : fichier de a contribution
      * @param personnelDto DTO Document
      */
     @Override
-    public BaPersonneDgpeDto savePersonnel(final MultipartFile file, final BaPersonneDgpeDto personnelDto) {
-        // Enregistrement du fichier
-        String filePath = baFileStorageService.saveFile(file);
-        //String fichier=file.getOriginalFilename();
-        // Création du document avec les détails du DTO
-        BaPersonnelDgpe personnel = mapper.maps(personnelDto);
+    public BaPersonneDgpeDto savePersonnel(final BaPersonneDgpeDto personnelDto) {
 
+        BaPersonnelDgpe personnel = mapper.maps(personnelDto);
         personnel.setId(BaUtils.randomUUID());
-        personnel.setUrl(filePath);
+        personnel.setNomPrenom(personnelDto.getNomPrenom());
+        personnel.setFonction(personnelDto.getFonction());
+        personnel.setParagraphe1(personnelDto.getParagraphe1());
+        personnel.setParagraphe2(personnelDto.getParagraphe2());
+        personnel.setParagraphe3(personnelDto.getParagraphe3());
+        personnel.setParagraphe4(personnelDto.getParagraphe4());
+        // personnel.setUrl(filePath);
         BaPersonnelDgpe saved = baPersonnelRepository.save(personnel);
 
         return mapper.maps(saved);
@@ -585,8 +700,8 @@ public BaDemandeDto getDemandeByid(String id) {
                 .orElseThrow(() -> new IllegalArgumentException("Personnel non trouvé avec l'ID : " + id));
 
         // Mettre à jour les champs nécessaires
-        existingPersonnel.setLibelle(personnelDto.getLibelle());
         existingPersonnel.setFonction(personnelDto.getFonction());
+        existingPersonnel.setNomPrenom(personnelDto.getNomPrenom());
         existingPersonnel.setParagraphe1(personnelDto.getParagraphe1());
         existingPersonnel.setParagraphe2(personnelDto.getParagraphe2());
         existingPersonnel.setParagraphe3(personnelDto.getParagraphe3());
@@ -654,5 +769,36 @@ public BaDemandeDto getDemandeByid(String id) {
 
         return mapper.maps(personnel);
     }
+
+
+    /**Gestion du reporting (Statisques)
+     */
+
+
+    @Override
+    public List<BaStatistiquesDto> getDemandesByStatus() {
+        return baDemandeRepository.countDemandesByStatus()
+                .stream()
+                .map(result -> new BaStatistiquesDto(result[0].toString(), (Long) result[1]))
+                .collect(Collectors.toList());
+    }
+@Override
+public List<BaStatistiquesDto> getDemandesByCarte() {
+        return baDemandeRepository.countDemandesByCarte()
+                .stream()
+                .map(result -> new BaStatistiquesDto(result[0].toString(), (Long) result[1]))
+                .collect(Collectors.toList());
+    }
+@Override
+public List<BaStatistiquesDto> getDemandesByMonth() {
+    return baDemandeRepository.countDemandesByMonth()
+            .stream()
+            .map(result -> new BaStatistiquesDto(
+                    BaUtils.getMonthLabel((Integer) result[0]), // Convertit le numéro du mois en libellé
+                    (Long) result[1]
+            ))
+            .collect(Collectors.toList());
+}
+
 
 }

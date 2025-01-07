@@ -1,14 +1,14 @@
 package com.bakouan.app.model;
 
 import com.bakouan.app.utils.BaUtils;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 @Entity
@@ -18,11 +18,8 @@ public class BaPersonnelDgpe extends BaAbstractAuditingEntity{
     @Column(name = "id")
     private String id = BaUtils.randomUUID();
 
-    @Column(name = "libelle")
-    private String libelle;
-
-    @Column(name = "url")
-    private String url;
+    @Column(name = "nom_prenom")
+   private String nomPrenom;
 
     @Column(name = "fonction")
     private String fonction;
@@ -38,5 +35,8 @@ public class BaPersonnelDgpe extends BaAbstractAuditingEntity{
 
     @Column(name = "paragraphe4")
     private String paragraphe4;
+
+    @OneToMany(mappedBy = "personnel")
+    private Set<BaPhotoPersonnel> documents=new HashSet<>();
 
 }

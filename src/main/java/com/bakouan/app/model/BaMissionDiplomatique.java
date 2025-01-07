@@ -29,7 +29,7 @@ public class BaMissionDiplomatique extends BaAbstractAuditingEntity{
     private String nationalite;
 
     @Column(name = "reciprocite")
-    private Boolean reciprocite;
+    private Boolean reciprocite=false;
 
     @OneToMany(mappedBy = "missionDiplomatique", cascade =CascadeType.ALL )
     private Set<BaDemande> demandes=new HashSet<>();

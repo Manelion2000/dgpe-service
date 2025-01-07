@@ -2,8 +2,10 @@ package com.bakouan.app.service;
 
 import com.bakouan.app.model.BaDocument;
 import com.bakouan.app.model.BaPersonnelDgpe;
+import com.bakouan.app.model.BaPhotoPersonnel;
 import com.bakouan.app.repositories.BaDocumentRepository;
 import com.bakouan.app.repositories.BaPersonnelRepository;
+import com.bakouan.app.repositories.BaPhotoPersonnelRepository;
 import com.bakouan.app.utils.BaUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,7 @@ public class BaFileStorageService {
     private static final Set<String> IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png");
     private final BaDocumentRepository baDocumentRepository;
     private final BaPersonnelRepository baPersonnelRepository;
+    private final BaPhotoPersonnelRepository baPhotoPersonnelRepository;
 
     /**
      * Récupérer le contenu d'un fichier.
@@ -93,8 +96,8 @@ public class BaFileStorageService {
      * @return un tableau de byte
      */
     public byte[] getPhotoPersonnel(final String idDoc) {
-        BaPersonnelDgpe personnel= baPersonnelRepository.findById(idDoc).orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.BAD_REQUEST, "Le personnel avec id" +idDoc));
+        BaPhotoPersonnel personnel= baPhotoPersonnelRepository.findById(idDoc).orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "Le document n'existe pas avec id  " +idDoc));
         // Construire le chemin complet du fichier
         String fullPath = basePath + File.separator + personnel.getUrl();
         File file = new File(fullPath);

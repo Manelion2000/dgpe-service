@@ -41,13 +41,13 @@ public class BaDemande extends BaAbstractAuditingEntity{
     @Column(name = "lieu_naissance")
     private String lieuNaissance;
 
-    @Column(name = "email",  unique = true,length = 100)
+    @Column(name = "email", length = 100)
     private String email;
 
     @Column(name = "adresse", length = 100)
     private String adresse;
 
-    @Column(name = "telephone",  unique = true)
+    @Column(name = "telephone")
     private String telephone;
 
     @Column(name = "nationalite")
@@ -101,7 +101,7 @@ public class BaDemande extends BaAbstractAuditingEntity{
      * Le type de carte diplomatique.
      */
     @Enumerated(value = EnumType.STRING)
-    @Column(name = "ecarte")
+    @Column(name = "ecarte",nullable = false)
     private ECarte eCarte;
 
     /**

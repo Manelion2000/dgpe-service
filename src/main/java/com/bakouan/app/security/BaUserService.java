@@ -304,7 +304,7 @@ public class BaUserService {
                 .findByStatutOrderByCreatedDateDesc(EStatut.A)
                 .stream()
                 .map(mapper::maps)
-                .collect(Collectors.toList());
+                .toList();
         return datas.stream()
                 .collect(Collectors.toList());
     }
@@ -378,6 +378,30 @@ public class BaUserService {
         if (roleRepository.existsById(uuid)) {
             roleRepository.deleteById(uuid);
         }
+    }
+
+    /**
+     * Ajoute un rôle à un profil.
+     *
+     * @param profilId L'identifiant du profil.
+     * @param roleId   L'identifiant du rôle.
+     * @return BaProfil avec le rôle ajouté.
+     * @throws IllegalArgumentException si le profil ou le rôle n'existe pas.
+     */
+
+    public BaProfil addRoleToProfil(String profilId, String roleId) {
+        BaProfil profil = profilRepository.findById(profilId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Profil introuvable avec l'ID : " + profilId));
+
+        BaRole role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rôle introuvable avec l'ID : " + roleId));
+
+        // Ajouter le rôle au profil
+        if (!profil.getRoles().contains(role)) {
+            profil.getRoles().add(role);
+        }
+
+        return profilRepository.save(profil);
     }
 
 
@@ -463,7 +487,7 @@ public class BaUserService {
     /**
      * Demander la réinitialisation du mot de passe.
      *
-     * @param passwordDto Pour demande la réinitialisation, je prend en compte
+     * @param passwordDto Pour demande la réinitialisation, je prends en compte
      *                    l'email ou le nom d'utilisateur.
      */
     public void requestPasswordReset(final BaUpdatePasswordDto passwordDto) {

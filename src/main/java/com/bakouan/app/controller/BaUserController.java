@@ -7,6 +7,7 @@ import com.bakouan.app.dto.BaProfilDto;
 import com.bakouan.app.dto.BaRoleDto;
 import com.bakouan.app.dto.BaUpdatePasswordDto;
 import com.bakouan.app.dto.BaUserDto;
+import com.bakouan.app.model.BaProfil;
 import com.bakouan.app.security.BaUserDetailsService;
 import com.bakouan.app.security.jwt.JWTFilter;
 import com.bakouan.app.security.jwt.TokenProvider;
@@ -78,7 +79,7 @@ public class BaUserController {
 
 
     /**
-     * Récuperer tout les users.
+     * Récuperer tous les users.
      *
      * @return List de BaUserDto {@link ResponseEntity}
      */
@@ -230,7 +231,11 @@ public class BaUserController {
         userService.deleteRole(uuid);
         return new ResponseEntity<>("Rôle supprimé", HttpStatus.OK);
     }
-
+    @PostMapping(BaConstants.URL.ROLE+ "/roles/{profilId}/{roleId}")
+    public ResponseEntity<BaProfil> addRoleToProfil(@PathVariable final String profilId, @PathVariable final String roleId) {
+        BaProfil updatedProfil = userService.addRoleToProfil(profilId, roleId);
+        return ResponseEntity.ok(updatedProfil);
+    }
     /**
      * Changement de mot de passe par l'utilisateur lui-même connecté.
      *
@@ -288,7 +293,7 @@ public class BaUserController {
      * @param idUser
      * @return La liste des utilisateurs.  {@link ResponseEntity}
      */
-    @GetMapping(BaConstants.URL.USER + "/{id}/activate")
+    @GetMapping(BaConstants.URL.USER + "/activate/{id}")
     public ResponseEntity<String> activateUser(@PathVariable(name = "id") final String idUser) {
         userService.activateUser(idUser);
         return new ResponseEntity<>("L'activation a reussi", HttpStatus.OK);
@@ -299,7 +304,7 @@ public class BaUserController {
      * @param idUser
      * @return La liste des utilisateurs.  {@link ResponseEntity}
      */
-    @GetMapping(BaConstants.URL.USER + "/{id}/deactivate")
+    @GetMapping(BaConstants.URL.USER + "/deactivate/{id}")
     public ResponseEntity<String> deactivateUser(@PathVariable(name = "id") final String idUser) {
         userService.deActivateUser(idUser);
         return new ResponseEntity<>("Déactivation a reussi", HttpStatus.OK);

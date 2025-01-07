@@ -4,7 +4,10 @@ import com.bakouan.app.enums.EDocument;
 import com.bakouan.app.enums.EDocumentAutorisation;
 import com.bakouan.app.utils.BaUtils;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -12,8 +15,8 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 
-@Table(name = "ba_document")
-public class BaDocument extends BaAbstractAuditingEntity{
+@Table(name = "ba_photo")
+public class BaPhotoPersonnel extends BaAbstractAuditingEntity{
     @Id
     @Column(name = "id")
     private String id = BaUtils.randomUUID();
@@ -24,23 +27,9 @@ public class BaDocument extends BaAbstractAuditingEntity{
     @Column(name = "url")
     private String url;
 
-    @Column(name = "numero_document")
-    private String numDocument;
-
-    @ManyToOne
-    @JoinColumn(name = "demande_id")
-    private BaDemande demande;
-
     @ManyToOne
     @JoinColumn(name = "personnel_id")
     private BaPersonnelDgpe personnel;
 
-    @Enumerated(value =EnumType.STRING)
-    @Column(name = "type_document")
-    private EDocument typeDocument;
-
-    @Enumerated(value =EnumType.STRING)
-    @Column(name = "autorisation_speciale")
-    private EDocumentAutorisation typeDocumentAutorisation;
 
 }

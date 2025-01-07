@@ -29,8 +29,6 @@ public interface YtMapper {
             @Mapping(target = "idMissionDiplomatique", source = "missionDiplomatique.id"),
             @Mapping(target = "pays", source = "missionDiplomatique.pays"),
             @Mapping(target="libelleMissionDiplomatique",source = "missionDiplomatique.libelle"),
-
-
             @Mapping(target = "documents", source = "documents")
 
     })
@@ -42,8 +40,11 @@ public interface YtMapper {
      * @param entity
      * @return le dto
      */
-    @Mappings({})
+    @Mappings({
+            @Mapping(target = "documents", source = "documents")
+    })
     BaPersonneDgpeDto maps(BaPersonnelDgpe entity);
+
     @InheritInverseConfiguration
     BaPersonnelDgpe maps(BaPersonneDgpeDto dto);
 
@@ -56,6 +57,7 @@ public interface YtMapper {
      */
     @Mappings({
             @Mapping(target = "idDemande", source = "demande.id"),
+            @Mapping(target="idPersonnel", source = "personnel.id")
     })
     BaDocumentDto maps(BaDocument entity);
 
@@ -67,6 +69,26 @@ public interface YtMapper {
      */
     @InheritInverseConfiguration
     BaDocument maps(BaDocumentDto dto);
+
+    /**
+     * Convertir une entité Document en DTO.
+     *
+     * @param entity
+     * @return le dto
+     */
+    @Mappings({
+            @Mapping(target="idPersonnel", source = "personnel.id")
+    })
+    BaPhotoPersonnelDto maps(BaPhotoPersonnel entity);
+
+    /**
+     * Convertir une DTO Document en entité.
+     *
+     * @param dto
+     * @return le dto
+     */
+    @InheritInverseConfiguration
+    BaPhotoPersonnel maps(BaPhotoPersonnelDto dto);
 
 
     /**

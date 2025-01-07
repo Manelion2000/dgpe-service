@@ -29,6 +29,13 @@ public interface BaDemandeRepository extends JpaRepository<BaDemande,String> {
     List<BaDemande> findByStatus(EStatus eStatus);
 
     /**
+     * Requête pour retourner la liste des démandes valider a deux niveaux par statut( ENCOURS, VALIDE, REJETTE, PRODUIT,DELIVRE)
+     * @param eStatus
+     * @return { Link une liste de demande}
+     */
+    List<BaDemande> findByStatusAndStatus(EStatus eStatus, EStatus eStatus1);
+
+    /**
      * Requête pour retourner la liste des demandes par type de carte (DIPLOMATIQUE, SALON D'HONNEUR)
      *
      * @param eCarte
@@ -36,6 +43,16 @@ public interface BaDemandeRepository extends JpaRepository<BaDemande,String> {
      */
     @Query("SELECT d FROM BaDemande d WHERE d.eCarte = :eCarte")
     List<BaDemande> findByECarte(@Param("eCarte") ECarte eCarte);
+
+    /**
+     * Requête pour retourner la liste des demandes par type de carte (DIPLOMATIQUE, SALON D'HONNEUR) et par stutus(ENCOUR)
+     * @param eCarte
+     * @param eStatus
+     * @return
+     */
+
+    @Query(value = "SELECT d FROM BaDemande d WHERE d.eCarte = :eCarte AND d.status = :eStatus")
+    List<BaDemande> findDemandeByCarteAndStatus(@Param("eCarte") ECarte eCarte, @Param("eStatus") EStatus eStatus);
 
 
 
@@ -45,4 +62,43 @@ public interface BaDemandeRepository extends JpaRepository<BaDemande,String> {
      * @return {Link une liste de demande}
      */
     List<BaDemande> findByTypeDemandeur(ETypeDemandeur typeDemandeur);
+
+    @Query("SELECT COUNT(d) FROM BaDemande d WHERE d.eCarte = :eCarte AND YEAR(d.dateDemande) = :annee")
+    long countDemandeByTypeAndYear(@Param("eCarte") ECarte eCarte, @Param("annee") int annee);
+
+    boolean existsByNumeroDemande(String numeroDemande);
+
+    /**
+     * Statistiques pour les demandes
+     */
+    /**
+     * Le nombre de demande par Status(ENOURS,REJETTE)
+     * @return
+     */
+    @Query("SELECT d.status, COUNT(d) FROM BaDemande d GROUP BY d.status")
+    List<Object[]> countDemandesByStatus();
+
+    /**
+     * Statistique par type de ecarte
+     * @return
+     */
+    @Query("SELECT d.eCarte, COUNT(d) FROM BaDemande d GROUP BY d.eCarte")
+    List<Object[]> countDemandesByCarte();
+
+    /**
+     * Statistique de demande par mois
+     */
+    @Query("SELECT MONTH(d.dateDemande), COUNT(d) FROM BaDemande d GROUP BY MONTH(d.dateDemande)")
+    List<Object[]> countDemandesByMonth();
+
+    /**
+     * Nombre demande par utisateur
+     */
+
+    @Query("SELECT d.user.id, COUNT(d) FROM BaDemande d GROUP BY d.user.id")
+    List<Object[]> countDemandesByUser();
+
+
+
+
 }

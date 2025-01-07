@@ -12,9 +12,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.time.Year;
 
 @Slf4j
 public class BaUtils {
+    /**
+     * Fontion pour generer le numero de démande
+     * @param typeCarte : type de carte
+     * @param sequence
+     * @return
+     */
+    public static String generateNumeroDemande(String typeCarte, long sequence) {
+        String year = String.valueOf(Year.now().getValue()).substring(1); // Récupère les deux derniers chiffres de l'année
+        return String.format("BF-%s%s-%03d", typeCarte, year, sequence);
+    }
 
     /**
      * Genère et retourne un idantifiant unique.
@@ -102,4 +113,23 @@ public class BaUtils {
             log.error("Error writing to file", e);
         }
     }
+
+    public static String getMonthLabel(int month) {
+        return switch (month) {
+            case 1 -> "Janvier";
+            case 2 -> "Février";
+            case 3 -> "Mars";
+            case 4 -> "Avril";
+            case 5 -> "Mai";
+            case 6 -> "Juin";
+            case 7 -> "Juillet";
+            case 8 -> "Août";
+            case 9 -> "Septembre";
+            case 10 -> "Octobre";
+            case 11 -> "Novembre";
+            case 12 -> "Décembre";
+            default -> "Inconnu";
+        };
+    }
+
 }

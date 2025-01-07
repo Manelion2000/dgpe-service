@@ -1,6 +1,8 @@
 package com.bakouan.app.controller;
 
 import com.bakouan.app.dto.*;
+import com.bakouan.app.enums.ECarte;
+import com.bakouan.app.enums.EStatus;
 import com.bakouan.app.enums.ETypeDemandeur;
 import com.bakouan.app.service.BaFileStorageService;
 import com.bakouan.app.service.BaParamService;
@@ -9,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -72,7 +75,7 @@ public class ParamController {
      * @param typeDemandeur : le type du demandeur
      * @return {@link ResponseEntity} contenant la liste des demandes
      */
-    @GetMapping(BaConstants.URL.DEMANDE + "/{typeDemandeur}")
+    @GetMapping(BaConstants.URL.DEMANDE + "/typedemandeur/{typeDemandeur}")
     public ResponseEntity<List<BaDemandeDto>> getDemandeByTyDemandeur(@PathVariable final ETypeDemandeur typeDemandeur) {
         List<BaDemandeDto> demandes = paramService.getDemandeTypeDemandeur(typeDemandeur);
         return ResponseEntity.ok(demandes);
@@ -107,6 +110,24 @@ public class ParamController {
     @GetMapping(BaConstants.URL.DEMANDE+"/encours")
     public List<BaDemandeDto> getDemandesEnCours() {
         return paramService.getDemandeEncours();
+    }
+
+    /**
+     * Retourne la liste des demandes validées par le dg
+     * @return Liste de BaDemandeDto
+     */
+    @GetMapping(BaConstants.URL.DEMANDE+"/validerdg")
+    public List<BaDemandeDto> getDemandesValiderDg() {
+        return paramService.getDemandeValiderDg();
+    }
+
+    /**
+     * Retourne la liste des demandes en cours
+     * @return Liste de BaDemandeDto
+     */
+    @GetMapping(BaConstants.URL.DEMANDE+"/valider")
+    public List<BaDemandeDto> getDemandesValiderST() {
+        return paramService.getDemandeValider();
     }
 
     /**
@@ -232,18 +253,29 @@ public class ParamController {
 
     /**
      * Ajouter un document à une demande.
-     *
-     * @param idDemande l'identifiant de la demande
      * @param file le fichier à télécharger
      * @param documentDto les détails du document
      * @return {@link ResponseEntity} avec le statut de création
      */
-    @PostMapping(value = BaConstants.URL.DOCUMENT + "/{idDemande}",consumes = {"multipart/form-data"})
-    public ResponseEntity<Void> addDocument(
-            @PathVariable final String idDemande,
-            @RequestPart("file") final MultipartFile file,
+    @PostMapping(value = BaConstants.URL.DOCUMENT ,consumes = {"multipart/form-data"})
+    public ResponseEntity<BaDocumentDto> addDocument(
+            @RequestPart("file") @Valid  final MultipartFile file,
             @RequestPart("documentDto") @Valid final BaDocumentDto documentDto) {
-        paramService.saveDocument(file, documentDto, idDemande);
+        paramService.saveDocument(file, documentDto);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    /**
+     * Ajouter une photo à un personnel.
+     * @param file le fichier à télécharger
+     * @param photoDto les détails du document
+     * @return {@link ResponseEntity} avec le statut de création
+     */
+    @PostMapping(value = BaConstants.URL.DOCUMENT+"/personnel" ,consumes = {"multipart/form-data"})
+    public ResponseEntity<BaPhotoPersonnelDto> addPhotoPersonel(
+            @RequestPart("file") @Valid  final MultipartFile file,
+            @RequestPart("documentDto") @Valid final BaPhotoPersonnelDto photoDto) {
+        paramService.savePhotoPersonnel(file, photoDto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -295,7 +327,35 @@ public class ParamController {
         final BaDocumentDto updatedDocument = paramService.updateDocument(documentId, documentDto);
         return ResponseEntity.ok(updatedDocument);
     }
+    /**
+     * Rétirer document d'une demande
+     * @param demandeId: id de la demande dont on doit retirer le document
+     * @param documentId: id de document
+     */
 
+    @DeleteMapping(BaConstants.URL.DEMANDE + "/documents/{demandeId}/{documentId}")
+    public ResponseEntity<Void> removeDocumentFromDemande(@PathVariable final String demandeId, @PathVariable final String documentId) {
+        paramService.removeDocumentFromDemande(demandeId, documentId);
+        return ResponseEntity.noContent().build();
+    }
+    /**
+     * Rétirer document d'un personnel
+     * @param personnelId: id du personnel dont on doit retirer le document
+     * @param documentId: id de document
+     */
+
+    /**
+     * Supprime un document associé à un personnel.
+     *
+     * @param personnelId l'ID du personnel.
+     * @param documentId l'ID du document.
+     * @return l'objet BaPersonneDgpeDto mis à jour.
+     */
+    @DeleteMapping(BaConstants.URL.PERSONNEL + "/documents/{personnelId}/{documentId}")
+    public ResponseEntity<BaPersonneDgpeDto> removeDocumentFromPersonnel(@PathVariable final String personnelId, @PathVariable final String documentId) {
+        BaPersonneDgpeDto updatedPersonnel = paramService.removeDocumentFromPersonnel(personnelId, documentId);
+        return ResponseEntity.ok(updatedPersonnel);
+    }
     /**
      * Fonction permettant de retourner un tableau de Byte d'un document
      * @param idDoc : id de document
@@ -303,7 +363,7 @@ public class ParamController {
      */
 
     @GetMapping(BaConstants.URL.DOCUMENT + "/lecture/{idDoc}")
-    public ResponseEntity<byte[]> lireDocumentContribution(@PathVariable final String idDoc) {
+    public ResponseEntity<byte[]> lireDocument(@PathVariable final String idDoc) {
         return new ResponseEntity<>(fileStorage.getDocument(idDoc), HttpStatus.OK);
     }
 
@@ -363,17 +423,15 @@ public class ParamController {
 
     /**
      * Fonction de création d'un personnel
-     * @param file        : fichier
      * @param personnelDto DTO Document
      * @return BaPersonneDgpeDto
      */
     @PostMapping(BaConstants.URL.PERSONNEL)
     public ResponseEntity<BaPersonneDgpeDto> savePersonnel(
-            @RequestPart("file") final MultipartFile file,
-            @RequestPart("personnelDto") final @Valid BaPersonneDgpeDto personnelDto) {
+            final @Valid @RequestBody BaPersonneDgpeDto personnelDto) {
 
         try {
-            BaPersonneDgpeDto savedDto = paramService.savePersonnel(file, personnelDto);
+            BaPersonneDgpeDto savedDto = paramService.savePersonnel(personnelDto);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedDto);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -461,4 +519,104 @@ public class ParamController {
     public ResponseEntity<byte[]> lireDocumentPersonnel(@PathVariable final String idDoc) {
         return new ResponseEntity<>(fileStorage.getPhotoPersonnel(idDoc), HttpStatus.OK);
     }
+    /**
+     * Retourne les demandes par type de carte (CARTE_ACCES) et statut (ENCOURS).
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/acces/encours")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeCarteAccesEnCours() {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.ENCOURS),
+                HttpStatus.OK
+        );
+    }
+
+    /**
+     * Retourne les demandes par type de carte (CARTE_ACCES) et statut (VALIDER). par le service technique
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/acces/valider")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeCarteAccesValiderST() {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.VALIDER),
+                HttpStatus.OK
+        );
+    }
+
+    /**
+     * Retourne les demandes par type de carte (CARTE_ACCES) et statut (VALIDER). par le DG
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/acces/validerdg")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeCarteAccesValiderDg() {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.VALIDER_DG),
+                HttpStatus.OK
+        );
+    }
+
+    /**
+     * Retourne les demandes par type de carte (CARTE_ACCES) et statut (VALIDER). par le service technique
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/acces/rejetter")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeCarteAccesRejetterST() {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.REJETER),
+                HttpStatus.OK
+        );
+    }
+
+    /**
+     * Retourne les demandes par type de carte (CARTE_ACCES) et statut (REJJETERDG). par le service technique
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/acces/rejetterdg")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeCarteAccesRejetterDg() {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.REJETER_DG),
+                HttpStatus.OK
+        );
+    }
+
+    /**
+     * Gestion du reporting(Statistique)
+     */
+    /**
+     * Récupère les statistiques des demandes par statut.
+     *
+     * @return une liste de statistiques par statut.
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping(BaConstants.URL.STATISTIQUE + "/status")
+    public ResponseEntity<List<BaStatistiquesDto>> getStatistiquesParStatus() {
+        return ResponseEntity.ok(paramService.getDemandesByStatus());
+    }
+
+    /**
+     * Récupère les statistiques des demandes par type de carte.
+     *
+     * @return une liste de statistiques par type de carte.
+     */
+    @GetMapping(BaConstants.URL.STATISTIQUE + "/carte")
+    public ResponseEntity<List<BaStatistiquesDto>> getStatistiquesParCarte() {
+        return ResponseEntity.ok(paramService.getDemandesByCarte());
+    }
+
+    /**
+     * Récupère les statistiques des demandes par mois.
+     *
+     * @return une liste de statistiques par mois.
+     */
+    @GetMapping(BaConstants.URL.STATISTIQUE  +"/mois")
+    public ResponseEntity<List<BaStatistiquesDto>> getStatistiquesParMois() {
+        return ResponseEntity.ok(paramService.getDemandesByMonth());
+    }
+
+
 }

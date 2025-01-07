@@ -77,6 +77,7 @@ public class TokenProvider {
                 .signWith(key, SignatureAlgorithm.HS512)
                 .setExpiration(validity)
                 .compact();
+        log.info("debut"+token);
         return new BaJWTTokenDto(Instant.now(), token, expiredIn);
     }
 

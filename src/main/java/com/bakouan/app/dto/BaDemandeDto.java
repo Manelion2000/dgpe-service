@@ -50,7 +50,7 @@ public class BaDemandeDto {
 
     private String profession;
 
-    private String fonction;
+    //private String fonction;
 
     private String institution;
 
@@ -62,13 +62,13 @@ public class BaDemandeDto {
 
     private ETypeDemandeur demandeur;
 
-    private ETypeDemandeurAcces typeDemandeurAcces;
+    //private ETypeDemandeurAcces typeDemandeurAcces;
 
     private ETypeCarte typeCarte;
 
     private ETypeCarteAcces typeCarteAcces;
 
-    private ECarte ecarte;
+    private ECarte eCarte;
 
     private String particulier;
 

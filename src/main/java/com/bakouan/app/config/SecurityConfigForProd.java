@@ -123,8 +123,8 @@ public class SecurityConfigForProd {
                     .requestMatchers(BaConstants.URL.BASE_URL + "/reset/**").permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.DEMANDE).permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT).permitAll()
-                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.MISSION).permitAll()
-//                    .hasAuthority(BaRolesConstants.BA_ADMIN)
+                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.MISSION)
+                   .hasAuthority(BaRolesConstants.BA_ADMIN)
                     .requestMatchers(BaConstants.URL.BASE_URL + "/**").permitAll();
         });
 

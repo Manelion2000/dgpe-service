@@ -5,7 +5,6 @@ public enum EStatus {
     VALIDER,
     VALIDER_DG,
     REJETER,
-    REJETTER_DG,
     REJETER_DG,
     PRODUIT,
     DELIVRE
