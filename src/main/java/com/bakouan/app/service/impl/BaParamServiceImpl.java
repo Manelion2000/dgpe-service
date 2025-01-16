@@ -49,6 +49,17 @@ public List<BaDemandeDto> getAllDemandes() {
                 .map(mapper::maps)
                 .collect(Collectors.toList());
     }
+    /**
+     * Récupère la liste des demandes pour un utilisateur spécifique.
+     *
+     * @param userId L'identifiant de l'utilisateur.
+     * @return Liste des demandes de l'utilisateur sous forme de DTO.
+     */
+    @Override
+    public List<BaDemandeDto> getDemandesByUser(String userId) {
+        List<BaDemande> demandes = baDemandeRepository.findDemandesByUserId(userId);
+        return demandes.stream().map(mapper::maps).collect(Collectors.toList());
+    }
 
     /**
      * Fonction aui retournant la liste de demandes archivées
@@ -75,9 +86,37 @@ public List<BaDemandeDto> getAllDemandesArchive() {
                 .collect(Collectors.toList());
     }
 
+@Override
+public List<BaDemandeDto> getDemandesValidOrRejected() {
+        List<BaDemande> demandes = baDemandeRepository.findValidOrRejectedAccessCards(
+                EStatus.VALIDER,
+                EStatus.REJETER,
+                ECarte.CARTE_ACCES
+        );
+        return demandes.stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+
     @Override
     public List<BaDemandeDto> getDemandeValiderDg() {
         return baDemandeRepository.findByStatus(EStatus.VALIDER_DG)
+                .stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+    @Override
+    public List<BaDemandeDto> getDemandeValiderParDg() {
+        return baDemandeRepository.findByStatusDg(EstatusDg.VALIDER)
+                .stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<BaDemandeDto> getDemandeRejeterDg() {
+        return baDemandeRepository.findByStatus(EStatus.REJETER_DG)
                 .stream()
                 .map(mapper::maps)
                 .collect(Collectors.toList());
@@ -137,7 +176,7 @@ public List<BaDemandeDto> getAllDemandesArchive() {
      */
     @Override
     public List<BaDemandeDto> getDemandeTypeDemandeur(ETypeDemandeur typeDemandeur) {
-        return baDemandeRepository.findByTypeDemandeur(typeDemandeur)
+        return baDemandeRepository.findByDemandeur(typeDemandeur)
                 .stream()
                 .map(mapper::maps)
                 .collect(Collectors.toList());
@@ -164,6 +203,36 @@ public List<BaDemandeDto> getAllDemandesArchive() {
     @Override
     public List<BaDemandeDto> getDemandeParTypeEtStatus(ECarte eCarte, EStatus eStatus) {
         return baDemandeRepository.findDemandeByCarteAndStatus(eCarte, eStatus)
+                .stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Liste de demande de cartes rejettées (REJETER, REJETER_DG)
+     * @param eCarte: type de carte à specifier dans le controller
+     * @return : une liste de demande
+     */
+    @Override
+    public List<BaDemandeDto> getDemandesRejectedByDGAndCarte(ECarte eCarte) {
+        List<EStatus> rejectedStatuses = List.of(EStatus.REJETER_DG, EStatus.REJETER);
+        return baDemandeRepository.findDemandeRejectedByDGAndCarte(ECarte.CARTE_DIPLOMATIQUE, rejectedStatuses)
+                .stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Retourne une liste de demandes par type de carte et statut.
+     *
+     * @param eStatusDg: stuts de Dg.
+     * @param eStatus le statut des demandes.
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @Override
+    public List<BaDemandeDto> getDemandeParStatusEtStatusDg(EStatus eStatus, EstatusDg eStatusDg) {
+        return baDemandeRepository.findByStatusAndStatusDg(eStatus, eStatusDg)
                 .stream()
                 .map(mapper::maps)
                 .collect(Collectors.toList());
@@ -275,7 +344,7 @@ public BaDemandeDto getDemandeByid(String id) {
     }
 
     /**
-     * Fonction de validation d'une demande
+     * Fonction de validation d'une demande par le service technique
      * @param id: id de demande
      * @return BaDemandeDto
      */
@@ -287,7 +356,7 @@ public BaDemandeDto getDemandeByid(String id) {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette immatriculation n'existe pas"));
 
         demande.setStatus(EStatus.VALIDER);
-        demande.setTypeCarte(demandeDtoDto.getTypeCarte());
+        demande.setDemandeur(demandeDtoDto.getDemandeur());
         demande.setTypeCarteAcces(demandeDtoDto.getTypeCarteAcces());
         demande.setDateValidation(LocalDate.now());
         // Vous pouvez modifier ou passer le motif depuis une méthode
@@ -317,6 +386,24 @@ public BaDemandeDto getDemandeByid(String id) {
         BaDemande updatedDemande = baDemandeRepository.save(demande);
         mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
                 "Votre demande acceptée par le Directeur General du Protocole d'Etat :\n "+demande.getMotifRejet(),"Demande d'immatriculation");
+        return mapper.maps(updatedDemande);
+
+
+    }
+
+    @Override
+    public BaDemandeDto validerDemandeParDG(final String id, final BaDemandeDto demandeDtoDto) {
+        logService.log(new BaLogDto(EAction.U, "Validation de la demande " + id));
+
+        BaDemande demande= baDemandeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
+
+        demande.setStatusDg(EstatusDg.VALIDER);
+        demande.setDateValidationDg(LocalDate.now());
+        // Vous pouvez modifier ou passer le motif depuis une méthode
+        BaDemande updatedDemande = baDemandeRepository.save(demande);
+        mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
+                "Votre demande acceptée par le Directeur General du Protocole d'Etat :\n ","Demande de de carte");
         return mapper.maps(updatedDemande);
 
 
@@ -376,6 +463,7 @@ public BaDemandeDto getDemandeByid(String id) {
         BaDemande demande= baDemandeRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
 
+        demande=mapper.maps(demandeDtoDto);
         demande.setStatus(EStatus.REJETER);
         demande.setDateValidation(LocalDate.now());
         demande.setMotifRejet(demande.getMotifRejet());  // Vous pouvez modifier ou passer le motif depuis une méthode
@@ -404,7 +492,28 @@ public BaDemandeDto getDemandeByid(String id) {
         demande.setMotifRejet(demande.getMotifRejet());  // Vous pouvez modifier ou passer le motif depuis une méthode
         BaDemande updatedDemande = baDemandeRepository.save(demande);
         mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
-                "Desolé votre demande vient d'être rejeté pour motif :\n "+demande.getMotifRejet(),"Demande d'immatriculation");
+                "Desolé votre demande vient d'être rejeté pour motif :\n "+demande.getMotifRejet(),"Demande de carte");
+        return mapper.maps(updatedDemande);
+
+
+    }/**
+     * Fonction de rejet une demande par le service technique.
+     * @param id: id de la demande
+     * @return BaDemandeDto
+     */
+    @Override
+    public BaDemandeDto rejeterDemandeParDG(final String id, final BaDemandeDto demandeDtoDto) {
+        logService.log(new BaLogDto(EAction.U, "Rejet de la demande par le DGPE " + id));
+
+        BaDemande demande= baDemandeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
+
+        demande.setStatus(EStatus.REJETER_DG);
+        demande.setDateValidationDg(LocalDate.now());
+        demande.setMotifRejet(demande.getMotifRejet());  // Vous pouvez modifier ou passer le motif depuis une méthode
+        BaDemande updatedDemande = baDemandeRepository.save(demande);
+        mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
+                "Desolé votre demande vient d'être rejeté pour motif :\n "+demande.getMotifRejet(),"Demande de carte");
         return mapper.maps(updatedDemande);
 
 
@@ -519,7 +628,7 @@ public BaDemandeDto getDemandeByid(String id) {
      * @param documentId        l'ID du document à supprimer
      */
     @Override
-    public void removeDocumentFromDemande(String demandeId, String documentId) {
+    public BaDemandeDto removeDocumentFromDemande(String demandeId, String documentId) {
         logService.log(new BaLogDto(EAction.D, "Suppression d'un document " + documentId + " de l'immatriculation " + demandeId));
 
         // Vérifier l'existence de l'immatriculation
@@ -541,10 +650,9 @@ public BaDemandeDto getDemandeByid(String id) {
         // Supprimer le document de la base de données si nécessaire
         baDocumentRepository.delete(document);
 
-        // Sauvegarder l'immatriculation mise à jour
-        baDemandeRepository.save(demande);
+        // Sauvegarder d'une demande mise à jour
+       return mapper.maps(baDemandeRepository.save(demande)) ;
 
-        logService.log(new BaLogDto(EAction.D, "Document supprimé avec succès de la demande"));
     }
 
     /**
@@ -799,6 +907,29 @@ public List<BaStatistiquesDto> getDemandesByMonth() {
             ))
             .collect(Collectors.toList());
 }
+
+    /**
+     * Récupère les statistiques globales des demandes.
+     *
+     * @return BaStatistiqueTotalDto contenant les statistiques globales.
+     */
+
+    @Override
+    public BaStatistiqueTotalDto getGlobalStatistics() {
+        return baDemandeRepository.getGlobalStatistics();
+    }
+
+    /**
+     * Récupère les statistiques pour un type de carte spécifique.
+     *
+     * @param eCarte Le type de carte (CARTE_DIPLOMATIQUE ou CARTE_ACCES).
+     * @return BaStatistiqueTotalDto contenant les statistiques pour le type de carte.
+     */
+
+    @Override
+    public BaStatistiqueTotalDto getStatisticsByCarte(ECarte eCarte) {
+        return baDemandeRepository.getStatisticsByCarte(eCarte);
+    }
 
 
 }

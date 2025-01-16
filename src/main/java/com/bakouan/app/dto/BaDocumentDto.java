@@ -23,8 +23,6 @@ public class BaDocumentDto {
 
     private String idDemande;
 
-    private  String idPersonnel;
-
     @NotNull(message="le type de document est obligatoire")
     private EDocument typeDocument;
 }

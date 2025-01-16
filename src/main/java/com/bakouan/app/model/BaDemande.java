@@ -56,6 +56,9 @@ public class BaDemande extends BaAbstractAuditingEntity{
     @Column(name = "profession")
     private String profession;
 
+    @Column(name = "fonction")
+    private String fonction;
+
     @Column(name = "date_prise_fonction")
     private LocalDate datePriseFonction;
 
@@ -81,7 +84,7 @@ public class BaDemande extends BaAbstractAuditingEntity{
      */
     @Enumerated(value = EnumType.STRING)
     @Column(name = "type_demandeur")
-    private ETypeDemandeur typeDemandeur;
+    private ETypeDemandeur demandeur;
 
     /**
      * Le type de demandeur.
@@ -141,6 +144,11 @@ public class BaDemande extends BaAbstractAuditingEntity{
     @Enumerated(value = EnumType.STRING)
     @Column(name = "status")
     private EStatus status=EStatus.ENCOURS;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "status_dg")
+    private EstatusDg statusDg=EstatusDg.ENCOURS;
+
 
     @OneToMany(mappedBy = "demande", fetch = FetchType.LAZY)
     private Set<BaDocument> documents = new HashSet<>();

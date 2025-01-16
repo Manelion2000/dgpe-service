@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -76,7 +77,7 @@ public class BaUserDto {
 
     private String libelleProfil;
 
-    private Set<BaRoleDto> roles;
+    private Set<BaRoleDto> roles= new HashSet<>();
 
     private Boolean isAdmin=false;
 

@@ -64,6 +64,18 @@ public class BaUserService {
                 .map(mapper::maps)
                 .collect(Collectors.toList());
     }
+    /**
+     * Récupère la liste des utilisateurs en fonction de leur statut admin.
+     *
+     * @param isAdmin True pour récupérer les administrateurs, False pour les non-administrateurs.
+     * @return Liste des utilisateurs filtrés.
+     */
+    public List<BaUserDto> getUsersByAdminStatus(boolean isAdmin) {
+        return userRepository.findByAdminStatus(isAdmin)
+                .stream()
+                .map(mapper::maps) // Conversion en DTO
+                .collect(Collectors.toList());
+    }
 
 
     /**
@@ -396,12 +408,37 @@ public class BaUserService {
         BaRole role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rôle introuvable avec l'ID : " + roleId));
 
-        // Ajouter le rôle au profil
-        if (!profil.getRoles().contains(role)) {
-            profil.getRoles().add(role);
+        // Vérifier si le rôle est déjà associé au profil
+        if (profil.getRoles().contains(role)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Le rôle est déjà associé au profil"
+            );
         }
 
+        // Ajouter le rôle au profil
+        profil.getRoles().add(role);
+
         return profilRepository.save(profil);
+    }
+
+    public BaUserDto addRoleToUser(String userId, String roleId) {
+        BaUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilisateur introuvable avec l'ID : " + userId));
+
+        BaRole role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rôle introuvable avec l'ID : " + roleId));
+
+        // Vérifier si le rôle est déjà associé au profil
+        if (user.getRoles().contains(role)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Le rôle est déjà associé au profil"
+            );
+        }
+
+        // Ajouter le rôle au profil
+        user.getRoles().add(role);
+
+        return mapper.maps(userRepository.save(user));
     }
 
 
@@ -430,7 +467,7 @@ public class BaUserService {
                 .findOneByUsernameIgnoreCaseAndStatut(username, EStatut.A);
         return opt.map(entity -> {
             final BaUserDto dto = mapper.maps(entity);
-            dto.setRoles(this.profilRepository.getReferenceById(dto.getIdProfil()).getRoles()
+            dto.setRoles(this.userRepository.getReferenceById(dto.getId()).getRoles()
                     .stream().map(mapper::maps).collect(Collectors.toSet()));
             return dto;
         });

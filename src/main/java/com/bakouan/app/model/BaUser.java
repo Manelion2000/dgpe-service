@@ -99,6 +99,12 @@ public class BaUser extends BaAbstractAuditingEntity {
     @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
     private Set<BaDemande> demandes=new HashSet<>();
 
+    @ManyToMany
+    @JoinTable(name = "ba_user_roles",
+            joinColumns = {@JoinColumn(name = "user_id")},
+            inverseJoinColumns = {@JoinColumn(name = "role_id")})
+    private Set<BaRole> roles = new HashSet<>();
+
 
     /**
      * Spécifie si l'utilisateur a été activé ou pas.

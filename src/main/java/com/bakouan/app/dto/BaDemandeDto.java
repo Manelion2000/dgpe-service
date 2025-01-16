@@ -1,5 +1,6 @@
 package com.bakouan.app.dto;
 import com.bakouan.app.enums.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -29,6 +30,8 @@ public class BaDemandeDto {
     private String motifRejet;
 
     private EStatus status=EStatus.ENCOURS;
+
+    private EstatusDg estatusDg=EstatusDg.ENCOURS;
 
     /**
      * Information propre au demandeur
@@ -68,6 +71,7 @@ public class BaDemandeDto {
 
     private ETypeCarteAcces typeCarteAcces;
 
+    @NotNull
     private ECarte eCarte;
 
     private String particulier;

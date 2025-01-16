@@ -115,22 +115,25 @@ public class SecurityConfigForProd {
 
         http.authorizeHttpRequests(auth -> {
             auth
+                    // Ressources publiques
                     .requestMatchers(BaConstants.URL.BASE_URL + "/activate").permitAll()
-                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.USER + "/{id}/activate").permitAll()
-                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.USER).permitAll()
+                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.PERSONNEL).permitAll()
+                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.PERSONNEL+"/lecture/**").permitAll()
+
                     .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.AUTHENTICATE).permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.CSRF_TOKEN).permitAll()
                     .requestMatchers(BaConstants.URL.BASE_URL + "/reset/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.DEMANDE).permitAll()
-                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT).permitAll()
-                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.MISSION)
-                   .hasAuthority(BaRolesConstants.BA_ADMIN)
-                    .requestMatchers(BaConstants.URL.BASE_URL + "/**").permitAll();
+
+                    // Ressources protégées
+                   // .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.DEMANDE).hasAuthority(BaRolesConstants.BA_ADMIN)
+                    //.requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.MISSION).hasAuthority(BaRolesConstants.BA_ADMIN)
+                    .requestMatchers(HttpMethod.POST, BaConstants.URL.BASE_URL + BaConstants.URL.PERSONNEL).hasAuthority(BaRolesConstants.BA_ADMIN)
+
+                    // Toutes les autres requêtes doivent être authentifiées
+                    .anyRequest().authenticated();
         });
 
-        http.with(securityConfigurerAdapter(), a -> {
-
-        });
+        http.with(securityConfigurerAdapter(), a -> {});
 
 
         return http.build();

@@ -8,6 +8,7 @@ import com.bakouan.app.dto.BaRoleDto;
 import com.bakouan.app.dto.BaUpdatePasswordDto;
 import com.bakouan.app.dto.BaUserDto;
 import com.bakouan.app.model.BaProfil;
+import com.bakouan.app.model.BaUser;
 import com.bakouan.app.security.BaUserDetailsService;
 import com.bakouan.app.security.jwt.JWTFilter;
 import com.bakouan.app.security.jwt.TokenProvider;
@@ -86,6 +87,25 @@ public class BaUserController {
     @GetMapping(BaConstants.URL.USER)
     public ResponseEntity<List<BaUserDto>> getUsers() {
         return new ResponseEntity<>(userService.fetchUtilisateurs(), HttpStatus.OK);
+    }
+    /**
+     * Récupère la liste des utilisateurs en fonction de leur statut admin.
+     * @return Liste des utilisateurs filtrés.
+     */
+    @GetMapping(BaConstants.URL.USER+"/admin")
+    public ResponseEntity<List<BaUserDto>> getUsersByAdminStatus() {
+        List<BaUserDto> users = userService.getUsersByAdminStatus(true);
+        return ResponseEntity.ok(users);
+    }
+    /**
+     * Récupère la liste des utilisateurs en fonction de leur statut admin.
+     *
+     * @return Liste des utilisateurs filtrés.
+     */
+    @GetMapping(BaConstants.URL.USER+"/membre")
+    public ResponseEntity<List<BaUserDto>> getUsersByAdminStatu() {
+        List<BaUserDto> users = userService.getUsersByAdminStatus(false);
+        return ResponseEntity.ok(users);
     }
 
     /**
@@ -231,10 +251,16 @@ public class BaUserController {
         userService.deleteRole(uuid);
         return new ResponseEntity<>("Rôle supprimé", HttpStatus.OK);
     }
-    @PostMapping(BaConstants.URL.ROLE+ "/roles/{profilId}/{roleId}")
+    @PostMapping(BaConstants.URL.ROLE+ "/{profilId}/{roleId}")
     public ResponseEntity<BaProfil> addRoleToProfil(@PathVariable final String profilId, @PathVariable final String roleId) {
         BaProfil updatedProfil = userService.addRoleToProfil(profilId, roleId);
         return ResponseEntity.ok(updatedProfil);
+    }
+
+    @PostMapping(BaConstants.URL.ROLE+ "/roles/{userId}/{roleId}")
+    public ResponseEntity<BaUserDto> addRoleToUser(@PathVariable final String userId, @PathVariable final String roleId) {
+        BaUserDto updateUser = userService.addRoleToUser(userId, roleId);
+        return ResponseEntity.ok(updateUser);
     }
     /**
      * Changement de mot de passe par l'utilisateur lui-même connecté.

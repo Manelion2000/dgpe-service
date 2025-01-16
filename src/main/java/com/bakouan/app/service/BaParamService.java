@@ -4,6 +4,7 @@ import com.bakouan.app.dto.*;
 import com.bakouan.app.enums.ECarte;
 import com.bakouan.app.enums.EStatus;
 import com.bakouan.app.enums.ETypeDemandeur;
+import com.bakouan.app.enums.EstatusDg;
 import com.bakouan.app.model.BaDocument;
 import com.bakouan.app.model.BaPersonnelDgpe;
 import jakarta.validation.Valid;
@@ -16,11 +17,19 @@ public interface BaParamService {
 
     List<BaDemandeDto> getAllDemandes();
 
+    List<BaDemandeDto> getDemandesByUser(String userId);
+
     List<BaDemandeDto> getAllDemandesArchive();
 
     List<BaDemandeDto> getDemandeValider();
 
+    List<BaDemandeDto> getDemandesValidOrRejected();
+
     List<BaDemandeDto> getDemandeValiderDg();
+
+    List<BaDemandeDto> getDemandeValiderParDg();
+
+    List<BaDemandeDto> getDemandeRejeterDg();
 
     List<BaDemandeDto> getDemandeRejette();
 
@@ -38,6 +47,10 @@ public interface BaParamService {
 
     List<BaDemandeDto> getDemandeParTypeEtStatus(ECarte eCarte, EStatus eStatus);
 
+    List<BaDemandeDto> getDemandesRejectedByDGAndCarte(ECarte eCarte);
+
+    List<BaDemandeDto> getDemandeParStatusEtStatusDg(EStatus eStatus, EstatusDg eStatusDg);
+
     BaDemandeDto getDemandeByid(String id);
 
     BaDemandeDto createDemande(BaDemandeDto demandeDto);
@@ -46,6 +59,8 @@ public interface BaParamService {
 
     BaDemandeDto validerDemandeParDg(String id, BaDemandeDto demandeDtoDto);
 
+    BaDemandeDto validerDemandeParDG(String id, BaDemandeDto demandeDtoDto);
+
     BaDemandeDto produireDemande(String id, BaDemandeDto demandeDtoDto);
 
     BaDemandeDto retirerDemande(String id, BaDemandeDto demandeDtoDto);
@@ -53,6 +68,8 @@ public interface BaParamService {
     BaDemandeDto rejeterDemande(String id, BaDemandeDto demandeDtoDto);
 
     BaDemandeDto rejeterDemandeParDg(String id, BaDemandeDto demandeDtoDto);
+
+    BaDemandeDto rejeterDemandeParDG(String id, BaDemandeDto demandeDtoDto);
 
     BaDocument saveDocument(MultipartFile file, BaDocumentDto documentDto);
 
@@ -64,7 +81,7 @@ public interface BaParamService {
 
     List<BaDocumentDto> getDocumentsByDemande(String idDemande);
 
-    void removeDocumentFromDemande(String demandeId, String documentId);
+    BaDemandeDto removeDocumentFromDemande(String demandeId, String documentId);
 
     void deleteDocumentLogique(String id);
 
@@ -103,4 +120,8 @@ public interface BaParamService {
     List<BaStatistiquesDto> getDemandesByCarte();
 
     List<BaStatistiquesDto> getDemandesByMonth();
+
+    BaStatistiqueTotalDto getGlobalStatistics();
+
+    BaStatistiqueTotalDto getStatisticsByCarte(ECarte eCarte);
 }

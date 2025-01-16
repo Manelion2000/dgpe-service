@@ -1,10 +1,8 @@
 package com.bakouan.app.model;
 
+import com.bakouan.app.enums.ECode;
 import com.bakouan.app.utils.BaUtils;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -36,10 +34,14 @@ public class BaRole extends BaAbstractAuditingEntity {
     @NotNull
     private String libelle;
 
+   /* @Column(name = "code1", unique = true)
+    @Enumerated(EnumType.STRING)
+    @NotNull
+    private ECode ecode;*/
+
     @Column(name = "code", unique = true)
     @NotNull
     private String code;
-
     /**
      * Comparaison d'égalité entre deux objets.
      *

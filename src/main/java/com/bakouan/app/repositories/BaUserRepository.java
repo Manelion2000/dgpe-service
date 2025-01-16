@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -14,7 +15,7 @@ import java.util.stream.Stream;
 /**
  * @author : <A HREF="mailto:lankoande.yabo.dev@gmail.com">Yienouyaba LANKOANDE (YaboLANK)</A>
  * @version : 1.0
- * Copyright (c) 2021 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * @since : 14/05/2021 à 12:18
  */
 @Repository
@@ -37,6 +38,15 @@ public interface BaUserRepository extends JpaRepository<BaUser, String> {
      * @return L'utilisateur ou un objet vide
      */
     Optional<BaUser> findOneByEmailAndStatut(String email, EStatut statut);
+
+    /**
+     * la liste des utilisateurs en fonction de isAdmin
+     * @return
+     */
+    @Query("SELECT u FROM BaUser u WHERE u.isAdmin = :isAdmin")
+    List<BaUser> findByAdminStatus(@Param("isAdmin") boolean isAdmin);
+
+
 
     /**
      * Vérifie l'existence d'un utilisateur à partir de son

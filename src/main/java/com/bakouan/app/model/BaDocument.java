@@ -31,9 +31,6 @@ public class BaDocument extends BaAbstractAuditingEntity{
     @JoinColumn(name = "demande_id")
     private BaDemande demande;
 
-    @ManyToOne
-    @JoinColumn(name = "personnel_id")
-    private BaPersonnelDgpe personnel;
 
     @Enumerated(value =EnumType.STRING)
     @Column(name = "type_document")

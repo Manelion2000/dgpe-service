@@ -43,6 +43,8 @@ public class BaDemandeurDto {
 
     private String profession;
 
+    private String fonction;
+
     @NotBlank(message = "le nom et prenom de la personne à prévenir est obligatoire")
     private String nomPrenom;
 

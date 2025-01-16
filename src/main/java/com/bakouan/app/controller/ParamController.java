@@ -68,6 +68,17 @@ public class ParamController {
     public ResponseEntity<BaDemandeDto> getDemandeById(@PathVariable final String id) {
         return ResponseEntity.ok(paramService.getDemandeByid(id));
     }
+    /**
+     * Récupère la liste des demandes pour un utilisateur spécifique.
+     *
+     * @param userId L'identifiant de l'utilisateur.
+     * @return Liste des demandes de l'utilisateur.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/utilisateur/{userId}")
+    public ResponseEntity<List<BaDemandeDto>> getDemandesByUser(@PathVariable String userId) {
+        List<BaDemandeDto> demandes = paramService.getDemandesByUser(userId);
+        return ResponseEntity.ok(demandes);
+    }
 
     /**
      * Récupérer la liste des demandes en fonction du type de demandeur.
@@ -117,17 +128,35 @@ public class ParamController {
      * @return Liste de BaDemandeDto
      */
     @GetMapping(BaConstants.URL.DEMANDE+"/validerdg")
-    public List<BaDemandeDto> getDemandesValiderDg() {
+    public List<BaDemandeDto> getDemandesValiderParDg() {
         return paramService.getDemandeValiderDg();
+    }
+    /**
+     * Retourne la liste des demandes validées par le dg
+     * @return Liste de BaDemandeDto
+     */
+    @GetMapping(BaConstants.URL.DEMANDE+"/rejeterdg")
+    public List<BaDemandeDto> getDemandesRejeterDg() {
+        return paramService.getDemandeRejeterDg();
     }
 
     /**
      * Retourne la liste des demandes en cours
      * @return Liste de BaDemandeDto
      */
-    @GetMapping(BaConstants.URL.DEMANDE+"/valider")
+    @GetMapping(BaConstants.URL.DEMANDE+"/valider_st")
     public List<BaDemandeDto> getDemandesValiderST() {
         return paramService.getDemandeValider();
+    }
+    /**
+     * Récupère la liste des demandes validées ou rejetées (selon les conditions spécifiques).
+     *
+     * @return une liste de demandes filtrées.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE+"/valider")
+    public ResponseEntity<List<BaDemandeDto>> getDemandesValidOrRejected() {
+        List<BaDemandeDto> demandes = paramService.getDemandesValidOrRejected();
+        return ResponseEntity.ok(demandes);
     }
 
     /**
@@ -248,7 +277,7 @@ public class ParamController {
      */
     @PatchMapping(BaConstants.URL.DEMANDE + "/rejeter_dg/{id}")
     public ResponseEntity<BaDemandeDto> rejeterDemandeParDg(@PathVariable final String id, @RequestBody final BaDemandeDto demandeDto) {
-        return ResponseEntity.ok(paramService.rejeterDemandeParDg(id, demandeDto));
+        return ResponseEntity.ok(paramService.rejeterDemandeParDG(id, demandeDto));
     }
 
     /**
@@ -334,9 +363,9 @@ public class ParamController {
      */
 
     @DeleteMapping(BaConstants.URL.DEMANDE + "/documents/{demandeId}/{documentId}")
-    public ResponseEntity<Void> removeDocumentFromDemande(@PathVariable final String demandeId, @PathVariable final String documentId) {
-        paramService.removeDocumentFromDemande(demandeId, documentId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<BaDemandeDto> removeDocumentFromDemande(@PathVariable final String demandeId, @PathVariable final String documentId) {
+       BaDemandeDto demandeUpdate= paramService.removeDocumentFromDemande(demandeId, documentId);
+        return ResponseEntity.ok(demandeUpdate);
     }
     /**
      * Rétirer document d'un personnel
@@ -531,6 +560,30 @@ public class ParamController {
                 HttpStatus.OK
         );
     }
+    /**
+     * Retourne les demandes par type de carte(en paramètre) et statut (VALIGER_DG).
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/cartes/valider_dg/{typeCarte}")
+    public ResponseEntity<List<BaDemandeDto>> getDemandetypeCarteValiderDg(@PathVariable final ECarte typeCarte) {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(typeCarte, EStatus.VALIDER_DG),
+                HttpStatus.OK
+        );
+    }
+    /**
+     * Retourne les demandes par type de carte (CARTE_DIPLOMATIQUE) et statut (ENCOURS).
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/carte/encours")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeDiplomatiqueEnCours() {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_DIPLOMATIQUE, EStatus.ENCOURS),
+                HttpStatus.OK
+        );
+    }
 
     /**
      * Retourne les demandes par type de carte (CARTE_ACCES) et statut (VALIDER). par le service technique
@@ -541,6 +594,19 @@ public class ParamController {
     public ResponseEntity<List<BaDemandeDto>> getDemandeCarteAccesValiderST() {
         return new ResponseEntity<>(
                 paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.VALIDER),
+                HttpStatus.OK
+        );
+    }
+
+    /**
+     * Retourne les demandes par type de carte (CARTE_DIPLOMATIQUE) et statut (VALIDER). par le service technique
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/carte/valider")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeDiplomatiqueValiderST() {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_DIPLOMATIQUE, EStatus.VALIDER),
                 HttpStatus.OK
         );
     }
@@ -557,6 +623,31 @@ public class ParamController {
                 HttpStatus.OK
         );
     }
+    /**
+     * Retourne les demandes par type de carte (CARTE_ACCES) et statut (VALIDER). par le DG
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/validedg")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeValiderDg() {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.VALIDER_DG),
+                HttpStatus.OK
+        );
+    }
+
+    /**
+     * Retourne les demandes par type de carte (CARTE_DIPLOMATIQUE) et statut (VALIDER). par le DG
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/carte/validerdg")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeDiplomatiqueValiderDg() {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_DIPLOMATIQUE, EStatus.VALIDER_DG),
+                HttpStatus.OK
+        );
+    }
 
     /**
      * Retourne les demandes par type de carte (CARTE_ACCES) et statut (VALIDER). par le service technique
@@ -566,7 +657,20 @@ public class ParamController {
     @GetMapping(BaConstants.URL.DEMANDE +"/acces/rejetter")
     public ResponseEntity<List<BaDemandeDto>> getDemandeCarteAccesRejetterST() {
         return new ResponseEntity<>(
-                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.REJETER),
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.REJETER_DG),
+                HttpStatus.OK
+        );
+    }
+
+    /**
+     * Retourne les demandes par type de carte (CARTE_DIPLOMATIQUE) et statut (VALIDER). par le service technique
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/carte/rejetter")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeDiplomatiqueRejetterST() {
+        return new ResponseEntity<>(
+                paramService.getDemandesRejectedByDGAndCarte(ECarte.CARTE_DIPLOMATIQUE),
                 HttpStatus.OK
         );
     }
@@ -580,6 +684,19 @@ public class ParamController {
     public ResponseEntity<List<BaDemandeDto>> getDemandeCarteAccesRejetterDg() {
         return new ResponseEntity<>(
                 paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.REJETER_DG),
+                HttpStatus.OK
+        );
+    }
+
+    /**
+     * Retourne les demandes par type de carte (CARTE_ACCES) et statut (REJJETERDG). par le service technique
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/carte/rejetterdg")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeDiplomatiqueRejetterDg() {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_DIPLOMATIQUE, EStatus.REJETER_DG),
                 HttpStatus.OK
         );
     }
@@ -607,16 +724,46 @@ public class ParamController {
     public ResponseEntity<List<BaStatistiquesDto>> getStatistiquesParCarte() {
         return ResponseEntity.ok(paramService.getDemandesByCarte());
     }
-
     /**
-     * Récupère les statistiques des demandes par mois.
+     * Récupère les statistiques des demandes par type de carte.
      *
-     * @return une liste de statistiques par mois.
+     * @return une liste de statistiques par type de carte.
      */
-    @GetMapping(BaConstants.URL.STATISTIQUE  +"/mois")
+    @GetMapping(BaConstants.URL.STATISTIQUE + "/mois")
     public ResponseEntity<List<BaStatistiquesDto>> getStatistiquesParMois() {
         return ResponseEntity.ok(paramService.getDemandesByMonth());
     }
+    /**
+     * Récupère les statistiques globales des demandes.
+     *
+     * @return BaStatistiqueTotalDto contenant les statistiques globales.
+     */
+    @GetMapping(BaConstants.URL.STATISTIQUE+"/global")
+    public ResponseEntity<BaStatistiqueTotalDto> getGlobalStatistics() {
+        BaStatistiqueTotalDto stats = paramService.getGlobalStatistics();
+        return ResponseEntity.ok(stats);
+    }
 
+    /**
+     * Récupère les statistiques pour les demandes de type CARTE_DIPLOMATIQUE.
+     *
+     * @return BaStatistiqueTotalDto contenant les statistiques pour CARTE_DIPLOMATIQUE.
+     */
+    @GetMapping(BaConstants.URL.STATISTIQUE+"/carte-diplomatique")
+    public ResponseEntity<BaStatistiqueTotalDto> getStatisticsCarteDiplomatique() {
+        BaStatistiqueTotalDto stats = paramService.getStatisticsByCarte(ECarte.CARTE_DIPLOMATIQUE);
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Récupère les statistiques pour les demandes de type CARTE_ACCES.
+     *
+     * @return BaStatistiqueTotalDto contenant les statistiques pour CARTE_ACCES.
+     */
+    @GetMapping(BaConstants.URL.STATISTIQUE+"/carte-acces")
+    public ResponseEntity<BaStatistiqueTotalDto> getStatisticsCarteAcces() {
+        BaStatistiqueTotalDto stats = paramService.getStatisticsByCarte(ECarte.CARTE_ACCES);
+        return ResponseEntity.ok(stats);
+    }
 
 }

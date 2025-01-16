@@ -1,5 +1,6 @@
 package com.bakouan.app.dto;
 
+import com.bakouan.app.enums.ECode;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -20,4 +21,5 @@ public class BaRoleDto {
     private String id;
     private String libelle;
     private String code;
+    //private ECode code;
 }

@@ -57,12 +57,11 @@ public interface YtMapper {
      */
     @Mappings({
             @Mapping(target = "idDemande", source = "demande.id"),
-            @Mapping(target="idPersonnel", source = "personnel.id")
     })
     BaDocumentDto maps(BaDocument entity);
 
     /**
-     * Convertir une  DTO Document en entité.
+     * Convertir une DTO Document en entité.
      *
      * @param dto
      * @return le dto
@@ -100,6 +99,7 @@ public interface YtMapper {
     @Mappings({
             @Mapping(source = "profil.id", target = "idProfil"),
             @Mapping(source = "profil.libelle", target = "libelleProfil"),
+            @Mapping(source = "roles",   target="roles")
     })
     BaUserDto maps(BaUser entity);
 
