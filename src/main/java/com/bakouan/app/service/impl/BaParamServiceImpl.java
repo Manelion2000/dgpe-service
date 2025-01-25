@@ -20,7 +20,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -261,9 +263,14 @@ public BaDemandeDto getDemandeByid(String id) {
         logService.log(new BaLogDto(EAction.C, "Création de la demande " + demandeDto.getNumeroDemande()));
 
         BaDemande demande = mapper.maps(demandeDto);
-        // Vérification de l'existence de la mission diplomatique
-        BaMissionDiplomatique mission=missionDiplomatiqueRepository.findById(demandeDto.getIdMissionDiplomatique())
-                .orElseThrow(()->new ResponseStatusException(HttpStatus.BAD_REQUEST,"la mission diplomatique est introuvable "));
+        // Vérification et association de la mission diplomatique uniquement pour CARTE_DIPLOMATIQUE
+        BaMissionDiplomatique mission = null;
+        if (demandeDto.getECarte() == ECarte.CARTE_DIPLOMATIQUE) {
+            mission = missionDiplomatiqueRepository.findById(demandeDto.getIdMissionDiplomatique())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST, "La mission diplomatique est introuvable"));
+            demande.setMissionDiplomatique(mission);
+        }
 
         // Vérification de l'existence de l'utilisateur
         BaUser user=baUserRepository.findById(demandeDto.getIdUser())
@@ -289,8 +296,8 @@ public BaDemandeDto getDemandeByid(String id) {
         demande.setDateDemande(LocalDate.now());
         demande.setMissionDiplomatique(mission);
         demande.setUser(user);
-        demande.setStatus(EStatus.ENCOURS);
         demande.setECarte(demandeDto.getECarte());
+        demande.setStatus(EStatus.ENCOURS);
         BaDemande savedDemande = baDemandeRepository.save(demande);
         return mapper.maps(savedDemande);
     }
@@ -882,21 +889,6 @@ public BaDemandeDto getDemandeByid(String id) {
     /**Gestion du reporting (Statisques)
      */
 
-
-    @Override
-    public List<BaStatistiquesDto> getDemandesByStatus() {
-        return baDemandeRepository.countDemandesByStatus()
-                .stream()
-                .map(result -> new BaStatistiquesDto(result[0].toString(), (Long) result[1]))
-                .collect(Collectors.toList());
-    }
-@Override
-public List<BaStatistiquesDto> getDemandesByCarte() {
-        return baDemandeRepository.countDemandesByCarte()
-                .stream()
-                .map(result -> new BaStatistiquesDto(result[0].toString(), (Long) result[1]))
-                .collect(Collectors.toList());
-    }
 @Override
 public List<BaStatistiquesDto> getDemandesByMonth() {
     return baDemandeRepository.countDemandesByMonth()
@@ -929,6 +921,103 @@ public List<BaStatistiquesDto> getDemandesByMonth() {
     @Override
     public BaStatistiqueTotalDto getStatisticsByCarte(ECarte eCarte) {
         return baDemandeRepository.getStatisticsByCarte(eCarte);
+    }
+
+    /**
+     * Fonction aui retourne les statistiques globales, ou statistique en foncion de type de carte
+     * @param eCarte
+     * @return
+     */
+    @Override
+    public BaStatistiqueTotalDto getStatistics(ECarte eCarte) {
+        if (eCarte != null) {
+            return baDemandeRepository.getStatisticsByCarte(eCarte);
+        } else {
+            return baDemandeRepository.getGlobalStatistics();
+        }
+    }
+
+    /**
+     * Service permettant de retourner les statistiques des demandes totale par mois et pour l'année actuelle
+     * @param eCarte: le typedde carte
+     * @return: un objet de demamdeDto
+     */
+
+    @Override
+    public List<BaStatistiquesDto> getDemandesByCurrentYearAndCarte(ECarte eCarte) {
+        int anneeCourante = LocalDate.now().getYear(); // Récupérer l'année actuelle
+
+        // Récupère les résultats agrégés depuis le repository
+        List<Object[]> results = baDemandeRepository.countDemandesByMonthAndType(anneeCourante, eCarte);
+
+        // Initialise un tableau des mois (1 à 12) avec zéro par défaut
+        Map<Integer, Long> demandesParMois = new HashMap<>();
+        for (int i = 1; i <= 12; i++) {
+            demandesParMois.put(i, 0L); // Initialise chaque mois avec zéro
+        }
+
+        // Remplit les mois ayant des valeurs à partir des résultats
+        for (Object[] result : results) {
+            Integer mois = (Integer) result[0]; // Mois (1 - 12)
+            Long count = (Long) result[1];      // Nombre de demandes
+            demandesParMois.put(mois, count);
+        }
+
+        // Convertit les résultats en une liste de DTO avec libellé du mois
+        return demandesParMois.entrySet()
+                .stream()
+                .map(entry -> new BaStatistiquesDto(
+                        BaUtils.getMonthLabel(entry.getKey()), // Convertit le numéro du mois en libellé
+                        entry.getValue()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Service permettant de retourner les statistiques des demandes totales par mois
+     * et pour une année spécifique.
+     *
+     * @param annee  L'année pour laquelle les statistiques sont demandées.
+     * @param eCarte Le type de carte (CARTE_DIPLOMATIQUE ou CARTE_ACCES).
+     * @return Une liste d'objets BaStatistiquesDto contenant les statistiques.
+     */
+    @Override
+    public List<BaStatistiquesDto> getDemandesByYearAndCarte(int annee, ECarte eCarte) {
+        // Récupère les résultats agrégés depuis le repository
+        List<Object[]> results = baDemandeRepository.countDemandesByMonthAndType(annee, eCarte);
+
+        // Initialise un tableau des mois (1 à 12) avec zéro par défaut
+        Map<Integer, Long> demandesParMois = new HashMap<>();
+        for (int i = 1; i <= 12; i++) {
+            demandesParMois.put(i, 0L); // Initialise chaque mois avec zéro
+        }
+
+        // Remplit les mois ayant des valeurs à partir des résultats
+        for (Object[] result : results) {
+            Integer mois = (Integer) result[0]; // Mois (1 - 12)
+            Long count = (Long) result[1];      // Nombre de demandes
+            demandesParMois.put(mois, count);
+        }
+
+        // Convertit les résultats en une liste de DTO avec libellé du mois
+        return demandesParMois.entrySet()
+                .stream()
+                .map(entry -> new BaStatistiquesDto(
+                        BaUtils.getMonthLabel(entry.getKey()), // Convertit le numéro du mois en libellé
+                        entry.getValue()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public BaStatistiqueCarteDto getCarteStatisticsByYear(int annee) {
+        return baDemandeRepository.countCarteByTypeAndYear(annee);
+    }
+
+    @Override
+    public BaStatistiqueCarteDto getCarteStatisticsForCurrentYear() {
+        int currentYear = LocalDate.now().getYear(); // Année actuelle
+        return getCarteStatisticsByYear(currentYear);
     }
 
 

@@ -81,6 +81,7 @@ public class BaUserDto {
 
     private Boolean isAdmin=false;
 
+    private Boolean isDiplomate=false;
     /**
      * Date de la dernière connexion.
      */

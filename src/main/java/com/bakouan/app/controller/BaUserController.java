@@ -98,6 +98,15 @@ public class BaUserController {
         return ResponseEntity.ok(users);
     }
     /**
+     * Récupère la liste des utilisateurs (mission diplomatique).
+     * @return Liste des utilisateurs filtrés.
+     */
+    @GetMapping(BaConstants.URL.USER+"/diplomate")
+    public ResponseEntity<List<BaUserDto>> getUsersDiplomate() {
+        List<BaUserDto> users = userService.getUsersByMissionDiplomatique(true);
+        return ResponseEntity.ok(users);
+    }
+    /**
      * Récupère la liste des utilisateurs en fonction de leur statut admin.
      *
      * @return Liste des utilisateurs filtrés.

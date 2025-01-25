@@ -46,6 +46,13 @@ public interface BaUserRepository extends JpaRepository<BaUser, String> {
     @Query("SELECT u FROM BaUser u WHERE u.isAdmin = :isAdmin")
     List<BaUser> findByAdminStatus(@Param("isAdmin") boolean isAdmin);
 
+    /**
+     * la liste des utilisateurs (mission diplomatique) en fonction de isDiplomate
+     * @return une liste d'objet
+     */
+    @Query("SELECT u FROM BaUser u WHERE u.isDiplomate = :isDiplomate")
+    List<BaUser> findByIsDiplomate(@Param("isDiplomate") boolean isDiplomate);
+
 
 
     /**

@@ -1,4 +1,5 @@
 package com.bakouan.app.repositories;
+import com.bakouan.app.dto.BaStatistiqueCarteDto;
 import com.bakouan.app.dto.BaStatistiqueTotalDto;
 import com.bakouan.app.enums.*;
 import com.bakouan.app.model.BaDemande;
@@ -87,12 +88,14 @@ public interface BaDemandeRepository extends JpaRepository<BaDemande,String> {
     List<BaDemande> findDemandesByUserId(@Param("userId") String userId);
 
 
+
     /**
      * Statistiques pour les demandes
      */
     /**
      * Le nombre de demande par Status(ENOURS,REJETTE)
      *
+     * <p>Le nombre de demande par Status(ENOURS,REJETTE)
      * @return
      */
     @Query("SELECT d.status, COUNT(d) FROM BaDemande d GROUP BY d.status")
@@ -148,20 +151,46 @@ public interface BaDemandeRepository extends JpaRepository<BaDemande,String> {
             "SUM(CASE WHEN d.status = 'ENCOURS' OR d.status = 'VALIDER' OR (d.eCarte = 'CARTE_ACCES' AND d.status = 'REJETER') THEN 1 ELSE 0 END), " +
             "SUM(CASE WHEN d.status = 'VALIDER_DG' THEN 1 ELSE 0 END), " +
             "SUM(CASE WHEN (d.eCarte = 'CARTE_DIPLOMATIQUE' AND (d.status = 'REJETER' OR d.status = 'REJETER_DG')) OR " +
-            "             (d.eCarte = 'CARTE_ACCES' AND d.status = 'REJETER_DG') THEN 1 ELSE 0 END)) " +
+            "             (d.eCarte = 'CARTE_ACCES' AND d.status = 'REJETER_DG') THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN d.status = 'PRODUIT' THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN d.status = 'DELIVRE' THEN 1 ELSE 0 END)) " +
             "FROM BaDemande d")
-
     BaStatistiqueTotalDto getGlobalStatistics();
 
     @Query("SELECT new com.bakouan.app.dto.BaStatistiqueTotalDto(" +
             "COUNT(d), " +
             "SUM(CASE WHEN d.status = 'ENCOURS' OR d.status = 'VALIDER' OR " +
             "             (d.eCarte = 'CARTE_ACCES' AND d.status = 'REJETER') THEN 1 ELSE 0 END), " +
-            "SUM(CASE WHEN d.status = 'VALIDER' THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN d.status = 'VALIDER_DG' THEN 1 ELSE 0 END), " +
             "SUM(CASE WHEN (d.eCarte = 'CARTE_DIPLOMATIQUE' AND (d.status = 'REJETER' OR d.status = 'REJETER_DG')) OR " +
-            "             (d.eCarte = 'CARTE_ACCES' AND d.status = 'REJETER_DG') THEN 1 ELSE 0 END)) " +
+            "             (d.eCarte = 'CARTE_ACCES' AND d.status = 'REJETER_DG') THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN d.status = 'PRODUIT' THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN d.status = 'DELIVRE' THEN 1 ELSE 0 END)) " +
             "FROM BaDemande d WHERE d.eCarte = :eCarte")
     BaStatistiqueTotalDto getStatisticsByCarte(@Param("eCarte") ECarte eCarte);
+
+    /**
+     * la requête permettant d'avoir le nombre de demandes par mois et pour une année courante
+     * @param annee: l'année courante
+     * @param eCarte: le type de carte
+     * @return
+     */
+    @Query("SELECT MONTH(d.dateDemande), COUNT(d) " +
+            "FROM BaDemande d " +
+            "WHERE YEAR(d.dateDemande) = :annee AND d.eCarte = :eCarte " +
+            "GROUP BY MONTH(d.dateDemande)")
+    List<Object[]> countDemandesByMonthAndType(@Param("annee") int annee, @Param("eCarte") ECarte eCarte);
+
+    @Query("SELECT new com.bakouan.app.dto.BaStatistiqueCarteDto( " +
+            "SUM(CASE WHEN d.eCarte = 'CARTE_DIPLOMATIQUE' THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN d.eCarte = 'CARTE_ACCES' THEN 1 ELSE 0 END)) " +
+            "FROM BaDemande d " +
+            "WHERE EXTRACT(YEAR FROM d.dateDemande) = :annee")
+    BaStatistiqueCarteDto countCarteByTypeAndYear(@Param("annee") int annee);
+
+
+
+
 
 
 

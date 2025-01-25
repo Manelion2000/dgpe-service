@@ -101,7 +101,8 @@ public class ParamController {
      */
     @PostMapping(BaConstants.URL.DEMANDE)
     public ResponseEntity<BaDemandeDto> createDemande(@RequestBody @Valid final BaDemandeDto demandeDto) {
-        final BaDemandeDto createdDemande = paramService.createDemande(demandeDto);
+        System.out.println("carte :"+demandeDto.getECarte());
+        BaDemandeDto createdDemande = paramService.createDemande(demandeDto);
         return new ResponseEntity<>(createdDemande, HttpStatus.CREATED);
     }
 
@@ -702,29 +703,6 @@ public class ParamController {
     }
 
     /**
-     * Gestion du reporting(Statistique)
-     */
-    /**
-     * Récupère les statistiques des demandes par statut.
-     *
-     * @return une liste de statistiques par statut.
-     */
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping(BaConstants.URL.STATISTIQUE + "/status")
-    public ResponseEntity<List<BaStatistiquesDto>> getStatistiquesParStatus() {
-        return ResponseEntity.ok(paramService.getDemandesByStatus());
-    }
-
-    /**
-     * Récupère les statistiques des demandes par type de carte.
-     *
-     * @return une liste de statistiques par type de carte.
-     */
-    @GetMapping(BaConstants.URL.STATISTIQUE + "/carte")
-    public ResponseEntity<List<BaStatistiquesDto>> getStatistiquesParCarte() {
-        return ResponseEntity.ok(paramService.getDemandesByCarte());
-    }
-    /**
      * Récupère les statistiques des demandes par type de carte.
      *
      * @return une liste de statistiques par type de carte.
@@ -763,6 +741,67 @@ public class ParamController {
     @GetMapping(BaConstants.URL.STATISTIQUE+"/carte-acces")
     public ResponseEntity<BaStatistiqueTotalDto> getStatisticsCarteAcces() {
         BaStatistiqueTotalDto stats = paramService.getStatisticsByCarte(ECarte.CARTE_ACCES);
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Récupère les statistiques global ou en fonction de type de carte.
+     *
+     * @return BaStatistiqueTotalDto contenant les statistiques pour CARTE_ACCES.
+     */
+    @GetMapping(BaConstants.URL.STATISTIQUE)
+    public ResponseEntity<BaStatistiqueTotalDto> getStatistics(@RequestParam(required = false) ECarte eCarte) {
+        BaStatistiqueTotalDto stats = paramService.getStatistics(eCarte);
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * End-pour retourner les statistiques des demandes totales par mois et pour l'année actuelle
+     * @param eCarte: le type de carte
+     * @return: un objet statistiqueDto
+     */
+    @GetMapping(BaConstants.URL.STATISTIQUE + "/annee/{eCarte}")
+    public ResponseEntity<List<BaStatistiquesDto>> getDemandesByCurrentYearAndCarte(
+            @PathVariable final ECarte eCarte
+    ) {
+        List<BaStatistiquesDto> stats = paramService.getDemandesByCurrentYearAndCarte(eCarte);
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * End-pour retourner les statistiques des demandes totales par mois et pour une année donnée
+     * @param eCarte: le type de carte
+     * @return: un objet statistiqueDto
+     */
+    @GetMapping(BaConstants.URL.STATISTIQUE + "/{annee}/{eCarte}")
+    public ResponseEntity<List<BaStatistiquesDto>> getDemandesByYearAndCarte(
+            @PathVariable int annee,
+            @PathVariable ECarte eCarte
+    ) {
+        List<BaStatistiquesDto> stats = paramService.getDemandesByYearAndCarte(annee, eCarte);
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Récupère les statistiques des cartes pour une année donnée.
+     *
+     * @param annee Année pour laquelle les statistiques sont demandées.
+     * @return Statistiques des cartes.
+     */
+    @GetMapping(BaConstants.URL.STATISTIQUE +"/etat/annee/{annee}")
+    public ResponseEntity<BaStatistiqueCarteDto> getCarteStatisticsByYear(@PathVariable int annee) {
+        BaStatistiqueCarteDto stats = paramService.getCarteStatisticsByYear(annee);
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Récupère les statistiques des cartes pour l'année actuelle.
+     *
+     * @return Statistiques des cartes pour l'année actuelle.
+     */
+    @GetMapping(BaConstants.URL.STATISTIQUE+"/etat")
+    public ResponseEntity<BaStatistiqueCarteDto> getCarteStatisticsForCurrentYear() {
+        BaStatistiqueCarteDto stats = paramService.getCarteStatisticsForCurrentYear();
         return ResponseEntity.ok(stats);
     }
 

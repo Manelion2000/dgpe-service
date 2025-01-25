@@ -14,7 +14,6 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "ba_personnel_dgpe")
 public class BaPersonneDgpeDto {
 
     private String id ;

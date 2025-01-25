@@ -158,7 +158,7 @@ public class BaDemande extends BaAbstractAuditingEntity{
     private BaUser user;
 
     @ManyToOne
-    @JoinColumn(name="mission_diplomatique_id")
+    @JoinColumn(name="mission_diplomatique_id", nullable = true)
     private BaMissionDiplomatique missionDiplomatique;
 
 }

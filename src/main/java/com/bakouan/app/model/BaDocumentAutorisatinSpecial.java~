@@ -1,0 +1,5 @@
+package com.bakouan.app.model;
+
+public class BaDocumentAutorisatinSpecial extends BaAbstractAuditingEntity{
+    
+}

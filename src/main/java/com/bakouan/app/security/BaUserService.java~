@@ -83,7 +83,7 @@ public class BaUserService {
      * @return Liste des utilisateurs filtrés.
      */
     public List<BaUserDto> getUsersByMissionDiplomatique(boolean isDiplomate) {
-        return userRepository.findByIsDiplomate(isDiplomate)
+        return userRepository.findByIsDiplomate(true)
                 .stream()
                 .map(mapper::maps) // Conversion en DTO
                 .collect(Collectors.toList());

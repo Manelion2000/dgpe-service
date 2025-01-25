@@ -119,6 +119,7 @@ public class SecurityConfigForProd {
                     .requestMatchers(BaConstants.URL.BASE_URL + "/activate").permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.PERSONNEL).permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.PERSONNEL+"/lecture/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT+"/lecture/**").permitAll()
 
                     .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.AUTHENTICATE).permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.CSRF_TOKEN).permitAll()

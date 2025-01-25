@@ -71,7 +71,7 @@ public class BaDemandeDto {
 
     private ETypeCarteAcces typeCarteAcces;
 
-    @NotNull
+    @NotNull(message = "le type de carte est obliatoire et dois pas être nul")
     private ECarte eCarte;
 
     private String particulier;

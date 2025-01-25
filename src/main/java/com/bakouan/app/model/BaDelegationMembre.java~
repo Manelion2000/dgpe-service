@@ -1,0 +1,4 @@
+package com.bakouan.app.model;
+
+public class BaDelegationMembre {
+}

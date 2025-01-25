@@ -70,6 +70,13 @@ public class BaUser extends BaAbstractAuditingEntity {
     @Column(name = "is_admin")
     private Boolean isAdmin;
 
+    /**
+     * Détermine si l'utilisateur une mission diplomatique.
+     */
+    @Column(name = "is_diplomate")
+    private Boolean isDiplomate;
+
+
     @NotNull
     @Column(name = "account_locked", nullable = false)
     private Boolean locked = false;

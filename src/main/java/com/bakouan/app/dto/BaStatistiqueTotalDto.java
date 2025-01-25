@@ -12,4 +12,6 @@ public class BaStatistiqueTotalDto {
     private Long encours;
     private Long valide;
     private Long rejete;
+    private Long enProduction;
+    private Long delivre;
 }

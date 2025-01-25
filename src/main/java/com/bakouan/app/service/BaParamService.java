@@ -115,13 +115,19 @@ public interface BaParamService {
 
     BaPersonneDgpeDto getPersonnelById(String id);
 
-    List<BaStatistiquesDto> getDemandesByStatus();
-
-    List<BaStatistiquesDto> getDemandesByCarte();
-
     List<BaStatistiquesDto> getDemandesByMonth();
 
     BaStatistiqueTotalDto getGlobalStatistics();
 
     BaStatistiqueTotalDto getStatisticsByCarte(ECarte eCarte);
+
+    BaStatistiqueTotalDto getStatistics(ECarte eCarte);
+
+    List<BaStatistiquesDto> getDemandesByCurrentYearAndCarte(ECarte eCarte);
+
+    List<BaStatistiquesDto> getDemandesByYearAndCarte(int annee, ECarte eCarte);
+
+    BaStatistiqueCarteDto getCarteStatisticsByYear(int annee);
+
+    BaStatistiqueCarteDto getCarteStatisticsForCurrentYear();
 }
