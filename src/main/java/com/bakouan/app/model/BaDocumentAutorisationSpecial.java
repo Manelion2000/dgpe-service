@@ -1,13 +1,18 @@
 package com.bakouan.app.model;
 
 import com.bakouan.app.utils.BaUtils;
-import jakarta.persistence.Column;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.ManyToOne;
-import org.springframework.data.annotation.Id;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-public class BaDocumentAutorisatinSpecial extends BaAbstractAuditingEntity{
+
+
+@Entity
+@Table(name = "ba_document_autorisation_special")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+public class BaDocumentAutorisationSpecial extends BaAbstractAuditingEntity{
     @Id
     @Column(name = "id")
     private String id = BaUtils.randomUUID();

@@ -198,7 +198,7 @@ public interface YtMapper {
      * Gestion des documents de l'autorisation spéciale pour le membre de la delegation
      */
     @Mappings({
-            @Mapping(target = "idMembre", source = "membre.id")
+            @Mapping(target = "idMembre", source = "delegationMembre.id")
     })
     BaDocumentPersonnelAutorisationSpecialDto maps(BaDocumentPersonnelAutorisationSpecial entity);
 
