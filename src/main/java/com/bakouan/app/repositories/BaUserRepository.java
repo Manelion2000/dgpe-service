@@ -3,6 +3,7 @@ package com.bakouan.app.repositories;
 import com.bakouan.app.enums.EStatut;
 import com.bakouan.app.model.BaUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -141,5 +142,8 @@ public interface BaUserRepository extends JpaRepository<BaUser, String> {
      * @return L'utilisateur
      */
     Optional<BaUser> findOneByTelephoneAndStatut(String telephone, EStatut statut);
+    @Modifying
+    @Query("UPDATE BaUser u SET u.activated = :status WHERE u.id = :idUser")
+    void updateUserActivation(@Param("idUser") String idUser, @Param("status") Boolean status);
 
 }

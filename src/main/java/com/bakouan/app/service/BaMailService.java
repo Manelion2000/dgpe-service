@@ -45,7 +45,7 @@ public class BaMailService {
     @Value(value = "${spring.mail.username}")
     private String emailFrom;
 
-    private static final String SENDER_NAME = "Categorie-App";
+    private static final String SENDER_NAME = "Direction Génerale du Protocole d'Etat/Burkina Faso";
 
     /**
      * Envois de mail.

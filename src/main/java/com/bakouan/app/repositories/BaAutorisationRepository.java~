@@ -3,9 +3,11 @@ package com.bakouan.app.repositories;
 import com.bakouan.app.enums.EEtatAutorisation;
 import com.bakouan.app.enums.EStatut;
 import com.bakouan.app.model.BaAutorisationSpeciale;
+import com.bakouan.app.model.BaDemande;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository

@@ -409,8 +409,6 @@ public BaDemandeDto getDemandeByid(String id) {
         demande.setDateValidationDg(LocalDate.now());
         // Vous pouvez modifier ou passer le motif depuis une méthode
         BaDemande updatedDemande = baDemandeRepository.save(demande);
-        mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
-                "Votre demande acceptée par le Directeur General du Protocole d'Etat :\n ","Demande de de carte");
         return mapper.maps(updatedDemande);
 
 
@@ -475,8 +473,9 @@ public BaDemandeDto getDemandeByid(String id) {
         demande.setDateValidation(LocalDate.now());
         demande.setMotifRejet(demande.getMotifRejet());  // Vous pouvez modifier ou passer le motif depuis une méthode
         BaDemande updatedDemande = baDemandeRepository.save(demande);
+        String motifR=updatedDemande.getMotifRejet();
         mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
-                "Desolé votre demande vient d'être rejeté pour motif :\n "+demande.getMotifRejet(),"Demande d'immatriculation");
+                "Desolé votre demande vient d'être rejeté pour motif :\n "+motifR,"Demande d'immatriculation");
         return mapper.maps(updatedDemande);
 
 
@@ -498,8 +497,9 @@ public BaDemandeDto getDemandeByid(String id) {
         demande.setDateValidationDg(LocalDate.now());
         demande.setMotifRejet(demande.getMotifRejet());  // Vous pouvez modifier ou passer le motif depuis une méthode
         BaDemande updatedDemande = baDemandeRepository.save(demande);
+        String motifRj=updatedDemande.getMotifRejet();
         mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
-                "Desolé votre demande vient d'être rejeté pour motif :\n "+demande.getMotifRejet(),"Demande de carte");
+                "Desolé votre demande vient d'être rejeté pour motif :\n "+motifRj,"Demande de carte");
         return mapper.maps(updatedDemande);
 
 
@@ -519,8 +519,9 @@ public BaDemandeDto getDemandeByid(String id) {
         demande.setDateValidationDg(LocalDate.now());
         demande.setMotifRejet(demande.getMotifRejet());  // Vous pouvez modifier ou passer le motif depuis une méthode
         BaDemande updatedDemande = baDemandeRepository.save(demande);
+        String motifRj=updatedDemande.getMotifRejet();
         mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
-                "Desolé votre demande vient d'être rejeté pour motif :\n "+demande.getMotifRejet(),"Demande de carte");
+                "Desolé votre demande vient d'être rejeté pour motif :\n "+motifRj,"Demande de carte");
         return mapper.maps(updatedDemande);
 
 

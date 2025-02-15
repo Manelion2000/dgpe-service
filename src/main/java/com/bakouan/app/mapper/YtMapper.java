@@ -178,6 +178,9 @@ public interface YtMapper {
     /**Gestion des autorisations speciales*/
 
     @Mappings({
+            @Mapping(target = "idMissionDiplomatique", source = "missionDiplomatique.id"),
+            @Mapping(target = "libelleMissionDiplomatique", source = "missionDiplomatique.libelle"),
+            @Mapping(target = "pays", source = "missionDiplomatique.pays"),
             @Mapping(target = "delegation  ", source = "delegation"),
             @Mapping(target = "documents", source = "documents")
     })
@@ -224,6 +227,34 @@ public interface YtMapper {
      */
     @InheritInverseConfiguration
     BaDocumentAutorisationSpecial maps(BaDocumentAutorisationSpecialDto dto);
+
+/**
+     * Convertir une entité Carte en DTO.
+     *
+     * @param entity
+     * @return le dto
+     */
+    @Mappings({
+            @Mapping(target = "idDemande", source = "demande.id"),
+            @Mapping(target = "numeroDemande", source = "demande.numeroDemande"),
+            @Mapping(target = "dateDemande", source = "demande.dateDemande"),
+            @Mapping(target = "nom", source = "demande.nom"),
+            @Mapping(target = "prenom", source = "demande.prenom"),
+            @Mapping(target = "dateNaissance", source = "demande.dateNaissance"),
+            @Mapping(target = "fonction", source = "demande.fonction"),
+            @Mapping(target = "sexe", source = "demande.sexe"),
+
+    })
+    BaCarteDto maps(BaCarte entity);
+
+    /**
+     * Convertir une DTO CarteDto en entité.
+     *
+     * @param dto
+     * @return le dto
+     */
+    @InheritInverseConfiguration
+    BaCarte maps(BaCarteDto dto);
 
 
 

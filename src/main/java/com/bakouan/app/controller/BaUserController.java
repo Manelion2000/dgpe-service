@@ -23,14 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -266,15 +259,36 @@ public class BaUserController {
         return ResponseEntity.ok(updatedProfil);
     }
 
+    /**
+     * endpoint pour ajouter role to user
+     * @param userId: L'identifiant de l'utilisateur.
+     * @param roleId: L'identifiant du rôle.
+     * @return Un utilisateur avec le rôle ajouté
+     */
+
     @PostMapping(BaConstants.URL.ROLE+ "/roles/{userId}/{roleId}")
     public ResponseEntity<BaUserDto> addRoleToUser(@PathVariable final String userId, @PathVariable final String roleId) {
         BaUserDto updateUser = userService.addRoleToUser(userId, roleId);
         return ResponseEntity.ok(updateUser);
     }
+
+    /**
+     * endpoint to remove role from user
+     * @param userId: L'identifiant de l'utilisateur.
+     * @param roleId: L'identifiant du rôle.
+     * @return Un utilisateur avec le rôle enlevé.
+     */
+    @DeleteMapping(BaConstants.URL.ROLE + "/{userId}/{roleId}")
+    public ResponseEntity<BaUserDto> removeRoleFromUser(
+            @PathVariable final String userId,
+            @PathVariable final String roleId) {
+        return ResponseEntity.ok(userService.removeRoleToUser(userId, roleId));
+    }
+
     /**
      * Changement de mot de passe par l'utilisateur lui-même connecté.
      *
-     * @param updatePasswordDto : le user
+     * @param updatePasswordDto : Le user
      * @return {@link ResponseEntity}
      */
     @PutMapping(BaConstants.URL.USER + "/change-password")
@@ -328,18 +342,31 @@ public class BaUserController {
      * @param idUser
      * @return La liste des utilisateurs.  {@link ResponseEntity}
      */
-    @GetMapping(BaConstants.URL.USER + "/activate/{id}")
+    @PatchMapping(BaConstants.URL.USER + "/activated/{id}")
     public ResponseEntity<String> activateUser(@PathVariable(name = "id") final String idUser) {
         userService.activateUser(idUser);
         return new ResponseEntity<>("L'activation a reussi", HttpStatus.OK);
     }
+    /**
+     * Activer un utilisateur.
+     *
+     * @param idUser
+     * @return La liste des utilisateurs.  {@link ResponseEntity}
+     */
+    @PatchMapping(BaConstants.URL.USER + "/activate/{id}")
+    public ResponseEntity<String> activateUtilisateur(@PathVariable(name = "id") final String idUser) {
+        userService.userActivation(idUser);
+        return new ResponseEntity<>("L'activation a reussi", HttpStatus.OK);
+    }
+
+
 
     /**
      * Déactiver un utilisateur.
      * @param idUser
      * @return La liste des utilisateurs.  {@link ResponseEntity}
      */
-    @GetMapping(BaConstants.URL.USER + "/deactivate/{id}")
+    @PatchMapping(BaConstants.URL.USER + "/deactivate/{id}")
     public ResponseEntity<String> deactivateUser(@PathVariable(name = "id") final String idUser) {
         userService.deActivateUser(idUser);
         return new ResponseEntity<>("Déactivation a reussi", HttpStatus.OK);

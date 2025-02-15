@@ -53,7 +53,7 @@ public class BaDemandeDto {
 
     private String profession;
 
-    //private String fonction;
+    private String fonction;
 
     private String institution;
 
@@ -62,6 +62,9 @@ public class BaDemandeDto {
     private String telephoneAprevenir;
 
     private ESexe sexe;
+
+
+    private LocalDate datePriseFonction;
 
     private ETypeDemandeur demandeur;
 

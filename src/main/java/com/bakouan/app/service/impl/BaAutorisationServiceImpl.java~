@@ -1,0 +1,268 @@
+package com.bakouan.app.service.impl;
+
+import com.bakouan.app.dto.*;
+import com.bakouan.app.dto.BaAutorisationSpecialeDto;
+import com.bakouan.app.enums.EAction;
+import com.bakouan.app.enums.EEtatAutorisation;
+import com.bakouan.app.enums.EStatut;
+import com.bakouan.app.mapper.YtMapper;
+import com.bakouan.app.model.BaAutorisationSpeciale;
+import com.bakouan.app.model.BaDocumentAutorisationSpecial;
+import com.bakouan.app.model.BaMissionDiplomatique;
+import com.bakouan.app.repositories.*;
+import com.bakouan.app.service.BaAutorisationService;
+import com.bakouan.app.service.BaFileStorageService;
+import com.bakouan.app.service.BaLogService;
+import com.bakouan.app.service.BaMailService;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.mapstruct.factory.Mappers;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+@Slf4j
+public class BaAutorisationServiceImpl implements BaAutorisationService {
+    private final YtMapper mapper = Mappers.getMapper(YtMapper.class);
+    private final BaAutorisationRepository autorisationRepository;
+    private final BaDocumentAutorisationRepository documentAutorisationRepository;
+    private final BaDelegationMembreRepository delegationMembreRepository;
+    private final BaDocumentMembreDelegationRepository documentMembreDelegationRepository;
+    private final BaLogService logService;
+    private final BaMailService mailService;
+    private final BaFileStorageService baFileStorageService;
+    private final BaUserRepository baUserRepository;
+    private final BaMissionDiplomatiqueRepository missionDiplomatiqueRepository;
+
+    @Override
+    public BaAutorisationSpecialeDto create(final BaAutorisationSpecialeDto autorisationSpecialeDto, final MultipartFile noteVerbale) {
+        log.info("Création d'une autorisation spéciale par : {}", autorisationSpecialeDto.getId());
+
+        // Enregistrer la note verbale
+        String noteVerbalePath = baFileStorageService.saveFileDocumentPDF(noteVerbale);
+
+        // Convertir le DTO en entité
+        BaAutorisationSpeciale autorisation = mapper.maps(autorisationSpecialeDto);
+        autorisation.setEtat(EEtatAutorisation.EN_ATTENTE);
+
+        // Sauvegarder l'autorisation
+        BaAutorisationSpeciale savedAutorisation = autorisationRepository.save(autorisation);
+
+        BaDocumentAutorisationSpecial document = new BaDocumentAutorisationSpecial();
+        document.setUrl(noteVerbalePath);
+        document.setLibelle("Note Verbale");
+        document.setAutorisationSpeciale(savedAutorisation);
+        documentAutorisationRepository.save(document);
+
+        return mapper.maps(savedAutorisation);
+    }
+
+    /**
+     * Service d'ajout de document à une autorisation spéciale
+     *
+     * @param autorisationId : id de l'autorisation speciale
+     * @param noteVerbale    : le document
+     * @param noteVerbale    : la note verbale
+     * @return : le dto de l'autorisation speciale
+     */
+
+    @Override
+    public BaAutorisationSpecialeDto uploadNoteVerbale(final String autorisationId, final MultipartFile noteVerbale) {
+        log.info("Ajout d'une note verbale à l'autorisation spéciale ID : {}", autorisationId);
+
+        // Valider que le fichier n'est pas vide
+        if (noteVerbale == null || noteVerbale.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le fichier de la note verbale est obligatoire.");
+        }
+
+        // Trouver l'autorisation par ID
+        BaAutorisationSpeciale autorisation = autorisationRepository.findById(autorisationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Autorisation spéciale introuvable."));
+
+        try {
+            // Enregistrer la note verbale
+            String noteVerbalePath = baFileStorageService.saveFileDocumentPDF(noteVerbale);
+
+            // Créer et enregistrer le document
+            BaDocumentAutorisationSpecial document = new BaDocumentAutorisationSpecial();
+            document.setUrl(noteVerbalePath);
+            document.setLibelle("Note Verbale");
+            document.setAutorisationSpeciale(autorisation);
+            documentAutorisationRepository.save(document);
+
+            log.info("Note verbale ajoutée avec succès à l'autorisation spéciale ID : {}", autorisationId);
+
+            return mapper.maps(autorisation);
+        } catch (Exception e) {
+            log.error("Erreur lors de l'ajout de la note verbale : {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Une erreur est survenue lors de l'ajout de la note verbale.");
+        }
+    }
+
+
+    /**
+     * Service de suppression de la note verbale à une autorisation spéciale
+     *
+     * @param autorisationId: id de l'autorisation speciale
+     * @param documentId      : id de la note verbale
+     * @return : le dto de l'autorisation speciale
+     */
+
+    @Override
+    public BaAutorisationSpecialeDto removeNoteVerbale(final String autorisationId, final String documentId) {
+        log.info("Suppression de la note verbale ID : {} pour l'autorisation spéciale ID : {}", documentId, autorisationId);
+
+        // Trouver le document par ID
+        BaDocumentAutorisationSpecial document = documentAutorisationRepository.findById(documentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Note verbale introuvable."));
+
+        // Vérifier que le document est bien lié à l'autorisation
+        if (!document.getAutorisationSpeciale().getId().equals(autorisationId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La note verbale ne correspond pas à l'autorisation spéciale spécifiée.");
+        }
+
+        try {
+            // Supprimer le document
+            documentAutorisationRepository.delete(document);
+
+            log.info("Note verbale supprimée avec succès pour l'autorisation spéciale ID : {}", autorisationId);
+
+            return mapper.maps(document.getAutorisationSpeciale());
+        } catch (Exception e) {
+            log.error("Erreur lors de la suppression de la note verbale : {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Une erreur est survenue lors de la suppression de la note verbale.");
+        }
+    }
+
+    /**
+     * Service de mise à jour d'une autorisation spéciale
+     * @param id    : id de l'autorisation speciale
+     * @param autorisationSpecialeDto : le dto de l'autorisation speciale
+     * @return  : le dto de l'autorisation speciale
+     */
+
+    @Override
+    public BaAutorisationSpecialeDto update(String id, final BaAutorisationSpecialeDto autorisationSpecialeDto) {
+        logService.log(new BaLogDto(EAction.U, "Mise à jour de l'autorisation spéciale avec ID : " + id));
+
+        // Récupération de l'autorisation existante
+        BaAutorisationSpeciale existingAutorisation = autorisationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation introuvable"));
+
+        // Récupération de la mission diplomatique (si nécessaire)
+        BaMissionDiplomatique missionDiplomatique = missionDiplomatiqueRepository.findById(autorisationSpecialeDto.getIdMissionDiplomatique())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mission diplomatique introuvable"));
+
+        if (autorisationSpecialeDto.getDateArrivee() != null) {
+            existingAutorisation.setDateArrivee(autorisationSpecialeDto.getDateArrivee());
+        }
+
+        if (autorisationSpecialeDto.getDateDepart() != null) {
+            existingAutorisation.setDateDepart(autorisationSpecialeDto.getDateDepart());
+        }
+
+        existingAutorisation.setMissionDiplomatique(missionDiplomatique);
+
+        // Sauvegarde de l'autorisation mise à jour
+        BaAutorisationSpeciale updatedAutorisation = autorisationRepository.save(existingAutorisation);
+
+        // Retourner la version mise à jour sous forme de DTO
+        return mapper.maps(updatedAutorisation);
+    }
+
+    /**
+     * Service de suppression (Archivage) d'une autorisation spéciale
+     * @param id : id de l'autorisation speciale
+     */
+
+    @Override
+    public void delete(String id) {
+        logService.log(new BaLogDto(EAction.D, "Suppression de l'autorisation spéciale ID : " + id));
+        BaAutorisationSpeciale autorisation = autorisationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation introuvable"));
+        autorisation.setStatut(EStatut.D);
+        autorisationRepository.save(autorisation);
+
+    }
+
+    @Override
+    public BaAutorisationSpecialeDto findById(String id) {
+        log.info("Recherche de l'autorisation spéciale ID : {}", id);
+        BaAutorisationSpeciale autorisation = autorisationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation introuvable"));
+
+        return mapper.maps(autorisation);
+    }
+
+    @Override
+    public BaAutorisationSpecialeDto validateSt(String id) {
+        logService.log(new BaLogDto(EAction.U, "Recherche de l'autorisation spéciale par le Service technique ID : {}"+ id));
+        BaAutorisationSpeciale autorisation = autorisationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation introuvable"));
+        autorisation.setEtat(EEtatAutorisation.VALIDE);
+
+        return mapper.maps(autorisation);
+    }
+
+    @Override
+    public BaAutorisationSpecialeDto rejectSt(String id) {
+        logService.log(new BaLogDto(EAction.U, "Rejet de l'autorisation spéciale par le Service technique ID : {}"+ id));
+        BaAutorisationSpeciale autorisation = autorisationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation introuvable"));
+        autorisation.setEtat(EEtatAutorisation.REJETE);
+
+        return mapper.maps(autorisation);
+    }
+
+    @Override
+    public BaAutorisationSpecialeDto validateDg(String id) {
+        logService.log(new BaLogDto(EAction.U, "Valider de l'autorisation spéciale par le DGID : {}"+ id));
+        BaAutorisationSpeciale autorisation = autorisationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation introuvable"));
+        autorisation.setEtat(EEtatAutorisation.VALIDE_DG);
+
+        return mapper.maps(autorisation);
+    }
+
+    @Override
+    public BaAutorisationSpecialeDto rejectDg(String id) {
+        logService.log(new BaLogDto(EAction.U, "Rejet de l'autorisation spéciale par le Dg ID : {}"+ id));
+        BaAutorisationSpeciale autorisation = autorisationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation introuvable"));
+        autorisation.setEtat(EEtatAutorisation.REJETER_DG);
+
+        return mapper.maps(autorisation);
+    }
+
+    @Override
+    public List<BaAutorisationSpecialeDto> findAll() {
+        return autorisationRepository.findByStatut(EStatut.A)
+                .stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+    @Override
+    public List<BaAutorisationSpecialeDto> autorisationSpecialArchiv() {
+        return autorisationRepository.findByStatut(EStatut.D)
+                .stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<BaAutorisationSpecialeDto> findAllByUser(String userId) {
+        return autorisationRepository.findByUserId(userId)
+                .stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+}

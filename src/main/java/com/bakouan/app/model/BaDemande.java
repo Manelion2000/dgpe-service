@@ -153,6 +153,9 @@ public class BaDemande extends BaAbstractAuditingEntity{
     @OneToMany(mappedBy = "demande", fetch = FetchType.LAZY)
     private Set<BaDocument> documents = new HashSet<>();
 
+    @OneToMany(mappedBy = "demande", fetch = FetchType.LAZY)
+    private Set<BaCarte>  cartes = new HashSet<>();
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private BaUser user;

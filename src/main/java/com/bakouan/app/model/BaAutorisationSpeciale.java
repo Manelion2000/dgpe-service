@@ -23,21 +23,40 @@ public class BaAutorisationSpeciale extends BaAbstractAuditingEntity {
     @Column(name = "id")
     private String id = BaUtils.randomUUID();
 
+    @Column(name = "date_demande")
+    private LocalDate dateDemande;
+
     @Column(name = "date_arrivee")
 
     private LocalDate dateArrivee;
 
     @Column(name = "date_depart")
-    @NotNull(message = "La date de départ est obligatoire")
     private LocalDate dateDepart;
+
+    @Column(name = "motif")
+    private String motifRejet;
+
+    @Column(name ="date_rejet")
+    private LocalDate dateRejet;
+
+    @Column(name = "date_validation")
+    private LocalDate dateValidation;
 
     @Column(name = "etat")
     @Enumerated(EnumType.STRING)
-    private EEtatAutorisation etat = EEtatAutorisation.EN_ATTENTE;
+    private EEtatAutorisation etat;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private BaUser user;
 
     @OneToMany(mappedBy = "autorisationSpeciale", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<BaDocumentAutorisationSpecial> documents = new HashSet<>();
 
     @OneToMany(mappedBy = "autorisationSpeciale", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<BaDelegationMembre> delegation = new HashSet<>();
+
+    @ManyToOne
+    @JoinColumn(name="mission_diplomatique_id", nullable = true)
+    private BaMissionDiplomatique missionDiplomatique;
 }

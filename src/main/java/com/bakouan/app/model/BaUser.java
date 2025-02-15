@@ -71,7 +71,7 @@ public class BaUser extends BaAbstractAuditingEntity {
     private Boolean isAdmin;
 
     /**
-     * Détermine si l'utilisateur une mission diplomatique.
+     * Détermine si l'utilisateur est une mission diplomatique.
      */
     @Column(name = "is_diplomate")
     private Boolean isDiplomate;
@@ -105,6 +105,9 @@ public class BaUser extends BaAbstractAuditingEntity {
 
     @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
     private Set<BaDemande> demandes=new HashSet<>();
+
+    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
+    private Set<BaDemande> autorisations=new HashSet<>();
 
     @ManyToMany
     @JoinTable(name = "ba_user_roles",

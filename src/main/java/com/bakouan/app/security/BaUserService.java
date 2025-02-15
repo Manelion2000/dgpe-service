@@ -14,6 +14,7 @@ import com.bakouan.app.repositories.BaUserRepository;
 import com.bakouan.app.service.BaLogService;
 import com.bakouan.app.service.BaMailService;
 import com.bakouan.app.utils.BaUtils;
+import com.bakouan.app.utils.BaVerificateurPassword;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.factory.Mappers;
@@ -443,12 +444,31 @@ public class BaUserService {
         // Vérifier si le rôle est déjà associé au profil
         if (user.getRoles().contains(role)) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Le rôle est déjà associé au profil"
+                    HttpStatus.BAD_REQUEST, "Le rôle est déjà associé a ce utilisateur"
             );
         }
 
         // Ajouter le rôle au profil
         user.getRoles().add(role);
+
+        return mapper.maps(userRepository.save(user));
+    }
+
+    /**
+     * Service pour enlever un role à un utilisateur.
+     * @param userId: L'identifiant de l'utilisateur.
+     * @param roleId: L'identifiant du rôle.
+     * @return Un utilisateur avec le rôle enlevé.
+     */
+    public BaUserDto removeRoleToUser(String userId, String roleId) {
+        BaUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilisateur introuvable avec l'ID : " + userId));
+
+        BaRole role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rôle introuvable avec l'ID : " + roleId));
+
+        // Ajouter le rôle au profil
+        user.getRoles().remove(role);
 
         return mapper.maps(userRepository.save(user));
     }
@@ -566,6 +586,35 @@ public class BaUserService {
         user.setActivated(Boolean.FALSE);
         this.userRepository.save(user);
     }
+/**
+     * Demander la réinitialisation du mot de passe.
+     *
+     * @param passwordDto Pour demande la réinitialisation, je prends en compte
+     *                    l'email ou le nom d'utilisateur.
+     */
+    public void updatePasswordReset(final BaUpdatePasswordDto passwordDto) {
+        log.info("Demande la réinitialisation de son mot de passe.");
+        final String email = passwordDto.getEmail();
+        Optional<BaUser> optionalUser;
+
+        if (!BaUtils.isEmpty(email)) {
+            optionalUser = this.userRepository.findOneByEmailAndStatut(email, EStatut.A);
+        }
+        else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'email fournie est incorrecte");
+        }
+
+        final BaUser user = optionalUser.get();
+        String newPassword= BaVerificateurPassword.generateRandomPassword(8);
+        String passeWordEncode=passwordEncoder.encode(newPassword);
+        final String resetKey = BaUtils.numberGenerator(Integer.parseInt("8")).toUpperCase();
+        user.setPassword(passeWordEncode);
+        user.setResetDate(ZonedDateTime.now());
+        user.setActivated(Boolean.TRUE);
+        this.userRepository.save(user);
+        mailService.sendMessage(user.getEmail(), user.getNom() + " " + user.getPrenom(), "Votre mot de passe" +
+                " à été modifié avec succès. Votre nouveau mot de passe est : " + newPassword, "Identifiant  de connexion");
+    }
 
     /**
      * Authenticate JWT.
@@ -612,4 +661,27 @@ public class BaUserService {
                     userRepository.save(usr);
                 });
     }
+    /**
+     * Active ou désactive un utilisateur automatiquement en fonction de son statut actuel.
+     *
+     * @param idUser identifiant de l'utilisateur
+     */
+
+    public void userActivation(final String idUser) {
+        log.info("Changement de l'état d'activation de l'utilisateur : {}", idUser);
+
+        userRepository.findById(idUser)
+                .ifPresentOrElse(user -> {
+                    boolean newStatus = !user.getActivated(); // Inversion du statut actuel
+                    user.setActivated(newStatus);
+                    userRepository.save(user);
+
+                    logService.log(new BaLogDto(EAction.U,
+                            (newStatus ? "Activation" : "Désactivation") + " de l'utilisateur " + idUser));
+                    log.info("Utilisateur {} avec succès", newStatus ? "activé" : "désactivé");
+                }, () -> {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur introuvable");
+                });
+    }
+
 }

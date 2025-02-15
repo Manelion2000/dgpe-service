@@ -12,6 +12,8 @@ import java.util.Set;
 public class BaAutorisationSpecialeDto {
     private String id;
 
+    private LocalDate dateDemande;
+
     @NotNull(message = "La date d'arrivée est obligatoire")
     private LocalDate dateArrivee;
 
@@ -21,7 +23,21 @@ public class BaAutorisationSpecialeDto {
     @NotNull(message = "L'etat de l'autorisation est obligatoire")
     private String etat;// EN_ATTENTE, VALIDE, REJETE
 
+    private String idMissionDiplomatique;
+
+    private String libelleMissionDiplomatique;
+
+    private String pays;
+
+    private String motifRejet;
+
+    private LocalDate dateRejet;
+
+    private LocalDate dateValidation;
+
     private Set<BaDocumentAutorisationSpecialDto> documents;
 
     private Set<BaDelegationMembreDto> delegation;
+
+
 }
