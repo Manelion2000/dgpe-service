@@ -1,5 +1,6 @@
 package com.bakouan.app.dto;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,7 @@ import java.util.Set;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class BaAutorisationSpecialeDto {
     private String id;
-
+    @PastOrPresent(message = "La date de demande ne peut être dans le futur")
     private LocalDate dateDemande;
 
     @NotNull(message = "La date d'arrivée est obligatoire")

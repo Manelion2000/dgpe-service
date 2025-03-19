@@ -35,6 +35,7 @@ import java.util.List;
 @RequestMapping(BaConstants.URL.BASE_URL)
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin(origins= {"*"})
 public class BaUserController {
 
     private final BaUserService userService;
@@ -321,6 +322,19 @@ public class BaUserController {
     public ResponseEntity<Void> requestResetPassword(
             @RequestBody final BaUpdatePasswordDto passwordDto) {
         this.userService.requestPasswordReset(passwordDto);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Demander le changement de mot de passe.
+     *
+     * @param passwordDto
+     * @return {@link ResponseEntity}
+     */
+    @PatchMapping (BaConstants.URL.USER + "/password/update")
+    public ResponseEntity<Void> newPassword(
+            @RequestBody final BaUpdatePasswordDto passwordDto) {
+        this.userService.updatePasswordReset(passwordDto);
         return ResponseEntity.ok().build();
     }
 

@@ -29,6 +29,9 @@ public class BaCarte extends BaAbstractAuditingEntity{
     @Column(name="code_carte", unique = true)
     private String codeCarte;
 
+    @Column(name="code_barre", unique = true)
+    private String codeBarre;
+
     @ManyToOne
     @JoinColumn(name="ba_carte_id")
     private BaDemande demande;

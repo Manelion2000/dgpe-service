@@ -17,11 +17,11 @@ public class BaConstants {
         public static final String CSRF_TOKEN = "/csrf";
         public static final String AUTHENTICATE = "/authenticate";
         public static final String USER = "/users";
-        public static final String CATEGORIE = "/categories";
-        public static final String PRODUCT = "/products";
+        public static final String CARTE = "/cartes";
         public static final String DEMANDE="/demandes";
         public static final String MISSION="/missions";
         public static final String PERSONNEL="/personnels";
+        public static final String AUTORISATION="/autorisations";
         public static final String STATISTIQUE="/statistiques";
     }
 

@@ -1,0 +1,30 @@
+package com.bakouan.app.repositories;
+
+import com.bakouan.app.enums.ECarte;
+import com.bakouan.app.enums.EStatut;
+import com.bakouan.app.model.BaCarte;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@Repository
+public interface BaCarteRepository extends JpaRepository<BaCarte, String> {
+
+    // Récupère les cartes associées à une demande spécifique
+    List<BaCarte> findByDemandeId(String id);
+
+    // Récupère les cartes dont la date d'expiration est antérieure à la date actuelle et dont le statut correspond (A ou D)
+    List<BaCarte> findByDateExpirationBeforeAndStatut(LocalDate currentDate, EStatut statut);
+
+    // Récupère les cartes en fonction de leur statut
+    List<BaCarte> findByStatut(EStatut statut);
+
+    @Query(value = "SELECT c.* " +
+            "FROM ba_carte c " +
+            "JOIN ba_demande d ON c.demande_id = d.id " +
+            "WHERE c.statut = :statut AND d.e_carte = :eCarte", nativeQuery = true)
+    List<BaCarte> findByStatutAndDemande_ECarte(@Param("statut") String statut, @Param("eCarte") String eCarte);
+}
+

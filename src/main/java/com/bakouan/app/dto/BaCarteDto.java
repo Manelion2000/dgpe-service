@@ -20,6 +20,10 @@ public class BaCarteDto {
 
     private String codeCarte;
 
+    private String codeBarre;
+    /**
+     * Information sur la demande
+     */
     private String idDemande;
 
     private String numeroDemande;

@@ -3,6 +3,7 @@ package com.bakouan.app.controller;
 import com.bakouan.app.dto.*;
 import com.bakouan.app.enums.ECarte;
 import com.bakouan.app.enums.EStatus;
+import com.bakouan.app.enums.EStatut;
 import com.bakouan.app.enums.ETypeDemandeur;
 import com.bakouan.app.service.BaFileStorageService;
 import com.bakouan.app.service.BaParamService;
@@ -20,6 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(BaConstants.URL.BASE_URL)
+@CrossOrigin(origins= {"*"})
 public class ParamController {
 
     private final BaParamService paramService;
@@ -702,6 +704,83 @@ public class ParamController {
         );
     }
 
+    /**
+     * Crée une carte en production pour une demande donnée.
+     * Pour une carte diplomatique, la date d'expiration est fixée à 3 ans.
+     * Pour une carte d'accès, la durée d'expiration (en mois) doit être précisée.
+     *
+     * @param idDemande l'identifiant de la demande
+     * @param moisExpiration (optionnel) le nombre de mois pour l'expiration de la carte d'accès
+     * @return le DTO de la carte produite
+     */
+    @PostMapping(BaConstants.URL.CARTE +"/{idDemande}")
+    public ResponseEntity<BaCarteDto> createCarteEnProduction(
+            @PathVariable  final String idDemande,
+            @RequestParam(required = false) Integer moisExpiration) {
+        BaCarteDto carteDto = paramService.createCarteEnProduction(idDemande, moisExpiration);
+        return ResponseEntity.status(HttpStatus.CREATED).body(carteDto);
+    }
+
+    /**
+     * Récupère la liste des cartes diplomatiques actifs.
+     *
+     * @return la liste des cartes filtrées sous forme de DTO.
+     */
+    @GetMapping(BaConstants.URL.CARTE+"/diplomatique/actifs")
+    public ResponseEntity<List<BaCarteDto>> getCartesByStatutAndType(
+            ) {
+        List<BaCarteDto> cartes = paramService.getCartesByStatutAndType(EStatut.A, ECarte.CARTE_DIPLOMATIQUE);
+        return ResponseEntity.ok(cartes);
+    }
+
+    /**
+     * Récupère la liste des cartes diplomatiques expiré.
+     *
+     * @return la liste des cartes filtrées sous forme de DTO.
+     */
+    @GetMapping(BaConstants.URL.CARTE+"/diplomatique/expires")
+    public ResponseEntity<List<BaCarteDto>> getCartesDiplomatiqueExpire(
+            ) {
+        List<BaCarteDto> cartes = paramService.getCartesByStatutAndType(EStatut.D, ECarte.CARTE_DIPLOMATIQUE);
+        return ResponseEntity.ok(cartes);
+    }
+
+    /**
+     * Récupère la liste des cartes acces actifs.
+     *
+     * @return la liste des cartes filtrées sous forme de DTO.
+     */
+    @GetMapping(BaConstants.URL.CARTE+"/acces/actifs")
+    public ResponseEntity<List<BaCarteDto>> getCartesAccesActif(
+            ) {
+        List<BaCarteDto> cartes = paramService.getCartesByStatutAndType(EStatut.A, ECarte.CARTE_ACCES);
+        return ResponseEntity.ok(cartes);
+    }
+
+    /**
+     * Récupère la liste des cartes diplomatiques expiré.
+     *
+     * @return la liste des cartes filtrées sous forme de DTO.
+     */
+    @GetMapping(BaConstants.URL.CARTE+"/acces/expires")
+    public ResponseEntity<List<BaCarteDto>> getCartesAccesExpire(
+            ) {
+        List<BaCarteDto> cartes = paramService.getCartesByStatutAndType(EStatut.D, ECarte.CARTE_ACCES);
+        return ResponseEntity.ok(cartes);
+    }
+
+
+
+    /**
+     * Désactiver une carte.
+     * @param idCarte Identifiant de la carte à désactiver.
+     * @return ResponseEntity indiquant le succès ou l'échec.
+     */
+    @PatchMapping(BaConstants.URL.CARTE+"/desactiver/{idCarte}/")
+    public ResponseEntity<String> desactiverCarte(@PathVariable String idCarte) {
+        paramService.desactiverUneCarte(idCarte);
+        return ResponseEntity.ok("Carte désactivée avec succès.");
+    }
     /**
      * Récupère les statistiques des demandes par type de carte.
      *

@@ -1,5 +1,5 @@
 server:
-  port: 8083
+  port: 8080
 spring:
   profiles:
     active: prod
@@ -15,6 +15,9 @@ spring:
     properties.mail.smtp:
       auth: true
       starttls.enable: true
+      timeout: 50000
+      connectiontimeout: 50000
+      writetimeout: 50000
       ssl.trust: ${spring.mail.host}
     test-connection: false
 
@@ -28,3 +31,7 @@ app:
       timeout: 5
       # Nombre de tentatives autorisées.
       max: 5
+servlet:
+  multipart:
+    max-file-size: 10MB
+    max-request-size: 50MB

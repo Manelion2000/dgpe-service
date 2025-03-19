@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.factory.Mappers;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,6 +24,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -38,6 +40,7 @@ public class BaParamServiceImpl implements BaParamService {
     private final BaMissionDiplomatiqueRepository missionDiplomatiqueRepository;
     private final BaPersonnelRepository baPersonnelRepository;
     private final BaPhotoPersonnelRepository baPhotoPersonnelRepository;
+    private final BaCarteRepository baCarteRepository;
     private final YtMapper mapper = Mappers.getMapper(YtMapper.class);
     private final BaLogService logService;
     private final BaMailService mailService;
@@ -321,13 +324,12 @@ public BaDemandeDto getDemandeByid(String id) {
         demande.setUser(user);
 
         // Vérification de l'existence de la mission diplomatique
-        BaMissionDiplomatique mission = missionDiplomatiqueRepository.findById(demandeDto.getIdMissionDiplomatique())
+       /* BaMissionDiplomatique mission = missionDiplomatiqueRepository.findById(demandeDto.getIdMissionDiplomatique())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La mission diplomatique est introuvable"));
-
+*/
         // Mise à jour des champs de la demande
         demande.setDateDemande(demandeDto.getDateDemande());
         demande.setUser(user);
-        demande.setMissionDiplomatique(mission);
 
         // Mise à jour des informations personnelles
         demande.setNom(demandeDto.getNom());
@@ -885,6 +887,129 @@ public BaDemandeDto getDemandeByid(String id) {
 
         return mapper.maps(personnel);
     }
+    /***
+     * Gestion des cartes (avant la production)
+     */
+
+    /**
+     * Récupère la liste des cartes en fonction d'un statut donné et du type de carte (via la demande associée).
+     *
+     * @param statut  le statut des cartes.
+     * @param eCarte  le type de carte (CARTE_DIPLOMATIQUE ou CARTE_ACCES).
+     * @return la liste des cartes filtrées sous forme de DTO.
+     */
+    @Override
+    public List<BaCarteDto> getCartesByStatutAndType(EStatut statut, ECarte eCarte) {
+        List<BaCarte> cartes = baCarteRepository.findByStatutAndDemande_ECarte(statut.name(), eCarte.name());
+        return cartes.stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+
+    @Override
+    public BaCarteDto createCarteEnProduction(String idDemande, Integer moisExpiration) {
+
+
+        // Récupérer la demande correspondante
+        BaDemande demande = baDemandeRepository.findById(idDemande)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Demande introuvable"));
+
+        // Vérifier si une carte est déjà produite pour cette demande et si l'une d'elles est toujours active (non expirée)
+        List<BaCarte> cartesExistantes = baCarteRepository.findByDemandeId(idDemande);
+        boolean carteActiveExiste = cartesExistantes.stream()
+                .anyMatch(c -> c.getDateExpiration() != null && c.getDateExpiration().isAfter(LocalDate.now()));
+        if (carteActiveExiste) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Une carte active existe déjà pour cette demande.");
+        }
+
+        // Création d'une nouvelle carte
+        BaCarte carte = new BaCarte();
+        carte.setId(BaUtils.randomUUID());
+        carte.setDateProduction(LocalDate.now());
+        carte.setDemande(demande);
+
+        // Déterminer la date d'expiration en fonction du type de carte
+        if (demande.getECarte() == ECarte.CARTE_DIPLOMATIQUE) {
+            // Pour une carte diplomatique, la date d'expiration est la date de production + 3 ans
+            carte.setDateExpiration(LocalDate.now().plusYears(3));
+        } else if (demande.getECarte() == ECarte.CARTE_ACCES) {
+            // Pour une carte d'accès, l'utilisateur doit spécifier le nombre de mois d'expiration
+            if (moisExpiration == null || moisExpiration <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Le nombre de mois d'expiration doit être précisé pour une carte d'accès.");
+            }
+            carte.setDateExpiration(LocalDate.now().plusMonths(moisExpiration));
+        } else {
+            // Si le type de carte n'est pas reconnu, on peut lever une exception ou gérer autrement
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Type de carte non supporté.");
+        }
+
+        // Générer et affecter les codes (production et code-barres)
+        String codeProduction = generateCodeProduction(demande);
+        carte.setCodeProduction(codeProduction);
+
+        String codeBarre = generateCodeBarre(demande);
+        carte.setCodeBarre(codeBarre);
+
+        // Sauvegarder la nouvelle carte
+        BaCarte savedCarte = baCarteRepository.save(carte);
+        return mapper.maps(savedCarte);
+
+    }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    @Override
+        public void desactiverCartesExpirees() {
+            log.info("Début de la tâche planifiée pour désactiver les cartes expirées...");
+
+            // Récupérer toutes les cartes actives dont la date d'expiration est passée
+            List<BaCarte> cartesExpirees = baCarteRepository.findByDateExpirationBeforeAndStatut(LocalDate.now(), EStatut.A);
+
+            if (cartesExpirees.isEmpty()) {
+                log.info("Aucune carte expirée trouvée.");
+            } else {
+                // Mettre à jour le statut de chaque carte expirée
+                cartesExpirees.forEach(carte -> {
+                    carte.setStatut(EStatut.D); // "D" pour désactivé
+                });
+                baCarteRepository.saveAll(cartesExpirees);
+                log.info("{} carte(s) expirée(s) désactivée(s).", cartesExpirees.size());
+                logService.log(new BaLogDto(EAction.U, cartesExpirees.size() + " cartes expirées ont été désactivées automatiquement."));
+            }
+        }
+
+    @Override
+    public void desactiverUneCarte(String idCarte) {
+        // Vérification de l'existence de la carte
+        BaCarte carte = baCarteRepository.findById(idCarte)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Carte introuvable avec l'ID : " + idCarte));
+
+        // Vérification si la carte est déjà désactivée
+        if (carte.getStatut() == EStatut.D) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La carte est déjà désactivée.");
+        }
+
+        // Mise à jour du statut de la carte
+        carte.setStatut(EStatut.D);
+        baCarteRepository.save(carte);
+
+        logService.log(new BaLogDto(EAction.U, "Désactivation de la carte ID : " + idCarte));
+    }
+
+
+    private String generateCodeProduction(BaDemande demande) {
+        return demande.getNumeroDemande() + "-" +
+                demande.getNom().toUpperCase() + "-" +
+                demande.getPrenom().toUpperCase() + "-" +
+                demande.getDateNaissance();
+    }
+
+    private String generateCodeBarre(BaDemande demande) {
+        String randomCode = String.format("%08d", new Random().nextInt(100000000)); // Générer un nombre aléatoire de 8 chiffres
+        return demande.getNumeroDemande() + "-MAE-" + randomCode;
+    }
+
 
 
     /**Gestion du reporting (Statisques)

@@ -181,7 +181,7 @@ public interface YtMapper {
             @Mapping(target = "idMissionDiplomatique", source = "missionDiplomatique.id"),
             @Mapping(target = "libelleMissionDiplomatique", source = "missionDiplomatique.libelle"),
             @Mapping(target = "pays", source = "missionDiplomatique.pays"),
-            @Mapping(target = "delegation  ", source = "delegation"),
+            @Mapping(target = "delegation", source = "delegation"),
             @Mapping(target = "documents", source = "documents")
     })
     BaAutorisationSpecialeDto maps(BaAutorisationSpeciale entity);

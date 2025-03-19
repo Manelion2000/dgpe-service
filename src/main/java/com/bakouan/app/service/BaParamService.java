@@ -1,13 +1,11 @@
 package com.bakouan.app.service;
 
 import com.bakouan.app.dto.*;
-import com.bakouan.app.enums.ECarte;
-import com.bakouan.app.enums.EStatus;
-import com.bakouan.app.enums.ETypeDemandeur;
-import com.bakouan.app.enums.EstatusDg;
+import com.bakouan.app.enums.*;
 import com.bakouan.app.model.BaDocument;
 import com.bakouan.app.model.BaPersonnelDgpe;
 import jakarta.validation.Valid;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -115,6 +113,15 @@ public interface BaParamService {
 
     BaPersonneDgpeDto getPersonnelById(String id);
 
+    List<BaCarteDto> getCartesByStatutAndType(EStatut statut, ECarte eCarte);
+
+    BaCarteDto createCarteEnProduction(String idDemande, Integer moisExpiration);
+
+    @Scheduled(cron = "0 0 0 * * *")
+    void desactiverCartesExpirees();
+
+    void desactiverUneCarte(String idCarte);
+
     List<BaStatistiquesDto> getDemandesByMonth();
 
     BaStatistiqueTotalDto getGlobalStatistics();
@@ -130,4 +137,5 @@ public interface BaParamService {
     BaStatistiqueCarteDto getCarteStatisticsByYear(int annee);
 
     BaStatistiqueCarteDto getCarteStatisticsForCurrentYear();
+
 }
