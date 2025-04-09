@@ -1,7 +1,5 @@
 package com.bakouan.app.dto;
-
 import com.bakouan.app.enums.EDocument;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,7 +16,6 @@ public class BaDocumentDto {
 
     private String url;
 
-    @NotBlank(message = "le numéro du document est obligatoire")
     private String numDocument;
 
     private String idDemande;

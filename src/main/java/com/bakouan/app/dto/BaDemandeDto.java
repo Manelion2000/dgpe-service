@@ -1,6 +1,8 @@
 package com.bakouan.app.dto;
 import com.bakouan.app.enums.*;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -40,7 +42,7 @@ public class BaDemandeDto {
     private String nom;
 
     private String prenom;
-
+    @Past(message = "La date de naissance doit être dans le passé")
     private LocalDate dateNaissance;
 
     private String lieuNaissance;
@@ -96,4 +98,9 @@ public class BaDemandeDto {
      */
 
     private Set<BaDocumentDto> documents;
+
+    @AssertTrue(message = "L'âge ne doit pas dépasser 100 ans")
+    public boolean isAgeValid() {
+        return dateNaissance == null || dateNaissance.isAfter(LocalDate.now().minusYears(100));
+    }
 }

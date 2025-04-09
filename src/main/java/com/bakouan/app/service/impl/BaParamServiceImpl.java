@@ -317,7 +317,9 @@ public BaDemandeDto getDemandeByid(String id) {
 
         BaDemande demande = baDemandeRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
-
+        if (demande.getStatus() != EStatus.REJETER) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La modification est autorisée uniquement si la demande est rejetée ou en cours.");
+        }
 
         BaUser user = baUserRepository.findById(demandeDto.getIdUser())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cet utilisateur  n'existe pas"));
@@ -467,21 +469,42 @@ public BaDemandeDto getDemandeByid(String id) {
     public BaDemandeDto rejeterDemande(final String id, final BaDemandeDto demandeDtoDto) {
         logService.log(new BaLogDto(EAction.U, "Rejet de la demande " + id));
 
-        BaDemande demande= baDemandeRepository.findById(id)
+        // Récupérer l'entité persistante
+        BaDemande demande = baDemandeRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
 
-        demande=mapper.maps(demandeDtoDto);
-        demande.setStatus(EStatus.REJETER);
+        // Sinon, on laisse la mission diplomatique existante inchangée (ou on la met à null si souhaité).
+        if (demandeDtoDto.getIdMissionDiplomatique() != null) {
+            BaMissionDiplomatique mission = missionDiplomatiqueRepository.findById(demandeDtoDto.getIdMissionDiplomatique())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La mission diplomatique est introuvable"));
+            demande.setMissionDiplomatique(mission);
+        }
+        // Si le DTO ne fournit pas d'identifiant de mission, vous pouvez décider de garder l'ancienne valeur.
+        // Par exemple, si vous souhaitez la conserver, rien n'est fait ici.
+        // Sinon, pour la mettre à null, vous pouvez ajouter : else { demande.setMissionDiplomatique(null); }
+
+        // Mise à jour d'autres informations depuis le DTO
         demande.setDateValidation(LocalDate.now());
-        demande.setMotifRejet(demande.getMotifRejet());  // Vous pouvez modifier ou passer le motif depuis une méthode
+        demande.setMotifRejet(demandeDtoDto.getMotifRejet());
+        demande.setStatus(EStatus.REJETER);
+
+        // Si d'autres champs doivent être mis à jour, faites-le de manière sélective
+        // pour éviter de remplacer des objets persistés par des instances transitoires.
+
         BaDemande updatedDemande = baDemandeRepository.save(demande);
-        String motifR=updatedDemande.getMotifRejet();
-        mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
-                "Desolé votre demande vient d'être rejeté pour motif :\n "+motifR,"Demande d'immatriculation");
+
+        // Envoi d'un email de notification
+        String motifR = updatedDemande.getMotifRejet();
+        mailService.sendMessage(
+                updatedDemande.getUser().getEmail(),
+                updatedDemande.getUser().getNom() + " " + updatedDemande.getUser().getPrenom(),
+                "Désolé, votre demande vient d'être rejetée pour le motif :\n" + motifR,
+                "Demande d'immatriculation"
+        );
         return mapper.maps(updatedDemande);
-
-
     }
+
+
 
     /**
      * Fonction de rejet une demande par le service technique.
@@ -500,8 +523,6 @@ public BaDemandeDto getDemandeByid(String id) {
         demande.setMotifRejet(demande.getMotifRejet());  // Vous pouvez modifier ou passer le motif depuis une méthode
         BaDemande updatedDemande = baDemandeRepository.save(demande);
         String motifRj=updatedDemande.getMotifRejet();
-        mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
-                "Desolé votre demande vient d'être rejeté pour motif :\n "+motifRj,"Demande de carte");
         return mapper.maps(updatedDemande);
 
 
@@ -522,8 +543,6 @@ public BaDemandeDto getDemandeByid(String id) {
         demande.setMotifRejet(demande.getMotifRejet());  // Vous pouvez modifier ou passer le motif depuis une méthode
         BaDemande updatedDemande = baDemandeRepository.save(demande);
         String motifRj=updatedDemande.getMotifRejet();
-        mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
-                "Desolé votre demande vient d'être rejeté pour motif :\n "+motifRj,"Demande de carte");
         return mapper.maps(updatedDemande);
 
 
@@ -543,7 +562,7 @@ public BaDemandeDto getDemandeByid(String id) {
 // Création du document avec les détails du DTO
         BaDocument baDocument = mapper.maps(documentDto);
         // Création du libellé avec type de document et numéro de document
-        String libelle = String.format("%s_%s", documentDto.getTypeDocument().name(), documentDto.getNumDocument());
+       // String libelle = String.format("%s_%s", documentDto.getTypeDocument().name(), documentDto.getNumDocument());
         // Récupérer la demande associée à partir de documentDto (si applicable)
         if (documentDto.getIdDemande() != null) {
             BaDemande demande = baDemandeRepository.findById(documentDto.getIdDemande())
@@ -553,13 +572,83 @@ public BaDemandeDto getDemandeByid(String id) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'ID de la demande est obligatoire pour enregistrer un document.");
         }
         baDocument.setId(BaUtils.randomUUID());
-        baDocument.setLibelle(libelle);
+        baDocument.setLibelle(documentDto.getTypeDocument()+"");
         baDocument.setUrl(filePath);
         baDocument.setTypeDocument(documentDto.getTypeDocument());
         //baDocument.setDemande(demande);
         return baDocumentRepository.save(baDocument);
 
     }
+    @Transactional
+    @Override
+    public BaDemandeDto createDemandeWithDocuments(
+            BaDemandeDto demandeDto,
+            List<BaDocumentUploadRequest> documentRequests) {
+
+        // Vérifier qu'il y a au moins 3 documents
+        if (documentRequests == null || documentRequests.size() < 2) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Il faut au moins 2 documents pour la demande.");
+        }
+
+        // Log de création
+        logService.log(new BaLogDto(EAction.C, "Création de la demande"));
+
+        // Mapper et initialiser la demande
+        BaDemande demande = mapper.maps(demandeDto);
+
+        // Mission diplomatique facultative
+        if (demandeDto.getECarte() == ECarte.CARTE_DIPLOMATIQUE) {
+            BaMissionDiplomatique mission = missionDiplomatiqueRepository.findById(demandeDto.getIdMissionDiplomatique())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mission diplomatique introuvable"));
+            demande.setMissionDiplomatique(mission);
+        }
+
+        // Utilisateur
+        BaUser user = baUserRepository.findById(demandeDto.getIdUser())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilisateur introuvable"));
+        demande.setUser(user);
+
+        // Génération du numéro de demande
+        int annee = LocalDate.now().getYear();
+        long sequence = baDemandeRepository.countDemandeByTypeAndYear(demandeDto.getECarte(), annee) + 1;
+        String numeroDemande;
+        do {
+            numeroDemande = BaUtils.generateNumeroDemande(
+                    demandeDto.getECarte() == ECarte.CARTE_DIPLOMATIQUE ? "D" : "A", sequence);
+            sequence++;
+        } while (baDemandeRepository.existsByNumeroDemande(numeroDemande));
+
+        // Initialisation de la demande
+        demande.setId(BaUtils.randomUUID());
+        demande.setNumeroDemande(numeroDemande);
+        demande.setDateDemande(LocalDate.now());
+        demande.setStatus(EStatus.ENCOURS);
+
+        // Sauvegarde
+        BaDemande savedDemande = baDemandeRepository.save(demande);
+
+        // Traitement des documents
+        for (BaDocumentUploadRequest docRequest : documentRequests) {
+            BaDocumentDto docDto = docRequest.getDocument();
+            MultipartFile file = docRequest.getFile();
+
+            // Sauvegarde du fichier
+            String filePath = baFileStorageService.saveFile(file);
+
+            // Création du document
+            BaDocument document = mapper.maps(docDto);
+            document.setId(BaUtils.randomUUID());
+            document.setLibelle(docDto.getTypeDocument().name());
+            document.setUrl(filePath);
+            document.setTypeDocument(docDto.getTypeDocument());
+            document.setDemande(savedDemande);
+
+            baDocumentRepository.save(document);
+        }
+
+        return mapper.maps(savedDemande);
+    }
+
 
 
     @Override

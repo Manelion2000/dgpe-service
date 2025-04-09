@@ -4,6 +4,7 @@ import com.bakouan.app.dto.*;
 import com.bakouan.app.enums.*;
 import com.bakouan.app.model.BaDocument;
 import com.bakouan.app.model.BaPersonnelDgpe;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.multipart.MultipartFile;
@@ -72,6 +73,9 @@ public interface BaParamService {
     BaDocument saveDocument(MultipartFile file, BaDocumentDto documentDto);
 
     //BaDocument savePhotoPersonnel(MultipartFile file, BaDocumentDto documentDto);
+
+    @Transactional
+    BaDemandeDto createDemandeWithDocuments(BaDemandeDto demandeDto, List<BaDocumentUploadRequest> documentRequests);
 
     BaPhotoPersonnelDto savePhotoPersonnel(MultipartFile file, BaPhotoPersonnelDto photoDto);
 

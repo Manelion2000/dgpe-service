@@ -11,6 +11,7 @@ import com.bakouan.app.utils.BaConstants;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -106,6 +107,19 @@ public class ParamController {
         System.out.println("carte :"+demandeDto.getECarte());
         BaDemandeDto createdDemande = paramService.createDemande(demandeDto);
         return new ResponseEntity<>(createdDemande, HttpStatus.CREATED);
+    }
+
+    /**
+     * Crée une demande avec au moins 3 documents associés.
+     *  - La partie "documents": une liste de JSON correspondant à BaDocumentDto.
+     */
+    @PostMapping(value = BaConstants.URL.DEMANDE + "/demandes", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BaDemandeDto> createDemandeWithDocuments(
+            @RequestPart("demande") @Valid BaDemandeDto demandeDto,
+            @RequestPart("documents") List<BaDocumentUploadRequest> documents
+    ) {
+        BaDemandeDto createdDemande = paramService.createDemandeWithDocuments(demandeDto, documents);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdDemande);
     }
 
     /**
@@ -660,7 +674,7 @@ public class ParamController {
     @GetMapping(BaConstants.URL.DEMANDE +"/acces/rejetter")
     public ResponseEntity<List<BaDemandeDto>> getDemandeCarteAccesRejetterST() {
         return new ResponseEntity<>(
-                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.REJETER_DG),
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.REJETER),
                 HttpStatus.OK
         );
     }

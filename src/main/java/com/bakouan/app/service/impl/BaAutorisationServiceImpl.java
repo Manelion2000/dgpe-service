@@ -70,6 +70,11 @@ public class BaAutorisationServiceImpl implements BaAutorisationService {
      */
     @Override
     public BaAutorisationSpecialeDto create(final BaAutorisationSpecialeDto autorisationSpecialeDto, final MultipartFile noteVerbale) {
+
+        if (autorisationSpecialeDto.getDateDepart() == null && autorisationSpecialeDto.getDateArrivee() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La date d'arrivée ou la date de départ (au moins l'une des deux) est requise.");
+        }
         // Sauvegarde de la note verbale et récupération du chemin d'accès du fichier
         String noteVerbalePath = baFileStorageService.saveFileDocumentPDF(noteVerbale);
 
@@ -457,6 +462,29 @@ public class BaAutorisationServiceImpl implements BaAutorisationService {
 
         // Convertit chaque entité en DTO et collecte les résultats dans une liste.
         return members.stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Récupère la liste des membres associés à une autorisation spéciale donnée.
+     *
+     * @param autorisationSpecialeId l'ID de l'autorisation spéciale
+     * @return la liste des membres sous forme de DTO
+     */
+    @Override
+    public List<BaDelegationMembreDto> getMembersByAutorisationSpeciale(String autorisationSpecialeId) {
+        // Récupération de la liste des membres depuis le repository en filtrant sur l'ID de l'autorisation spéciale.
+        List<BaDelegationMembre> membres = delegationMembreRepository.findByAutorisationSpecialeId(autorisationSpecialeId);
+
+        // Si aucun membre n'est trouvé, on peut lever une exception ou retourner une liste vide
+        if (membres == null || membres.isEmpty()) {
+            log.warn("Aucun membre trouvé pour l'autorisation spéciale ID: {}", autorisationSpecialeId);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Aucun membre trouvé pour cette autorisation spéciale.");
+        }
+
+        // Conversion de la liste d'entités en liste de DTO à l'aide du mapper
+        return membres.stream()
                 .map(mapper::maps)
                 .collect(Collectors.toList());
     }

@@ -40,4 +40,6 @@ public interface BaAutorisationService {
     BaDelegationMembreDto getMemberById(String membreId);
 
     List<BaDelegationMembreDto> getAllMembers();
+
+    List<BaDelegationMembreDto> getMembersByAutorisationSpeciale(String autorisationSpecialeId);
 }

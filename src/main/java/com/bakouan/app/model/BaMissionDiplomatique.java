@@ -34,6 +34,6 @@ public class BaMissionDiplomatique extends BaAbstractAuditingEntity{
     @OneToMany(mappedBy = "missionDiplomatique", cascade =CascadeType.ALL )
     private Set<BaDemande> demandes=new HashSet<>();
 
-    @OneToMany(mappedBy = "missionDiplomatique", cascade =CascadeType.ALL )
-    private Set<BaDemande> autorisations=new HashSet<>();
+   @OneToMany(mappedBy = "missionDiplomatique", cascade =CascadeType.ALL )
+    private Set<BaAutorisationSpeciale> autorisations=new HashSet<>();
 }

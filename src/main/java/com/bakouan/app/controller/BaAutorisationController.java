@@ -121,9 +121,6 @@ public class BaAutorisationController {
     /**
      * Endpoint pour créer un membre de délégation.
      * Le DTO est validé grâce à JSR-303 (annotations dans le DTO) avant d'être traité.
-     *
-     * Exemple d'URL : POST /api/delegation-speciale/membre
-     *
      * @param membreDto Le DTO contenant les informations du membre.
      * @param bindingResult Contient les erreurs de validation, le cas échéant.
      * @return Le membre créé avec le code HTTP 201 (Created).
@@ -195,15 +192,24 @@ public class BaAutorisationController {
 
     /**
      * (Optionnel) Endpoint pour récupérer tous les membres de délégation.
-     *
-     * Exemple d'URL : GET /api/delegation-speciale/membre
-     *
      * @return La liste de tous les membres de délégation.
      */
     @GetMapping(BaConstants.URL.AUTORISATION+"/membre")
     public ResponseEntity<List<BaDelegationMembreDto>> getAllMembers() {
         List<BaDelegationMembreDto> members = autorisationService.getAllMembers();
         return ResponseEntity.ok(members);
+    }
+    /**
+     * Endpoint REST pour récupérer la liste des membres associés à une autorisation spéciale.
+     * @param autorisationSpecialeId l'ID de l'autorisation spéciale
+     * @return la liste des membres sous forme de DTO avec le code HTTP 200 (OK)
+     */
+    @GetMapping(BaConstants.URL.AUTORISATION+"/delegation/autorisationSpecialeId")
+    public ResponseEntity<List<BaDelegationMembreDto>> getMembersByAutorisationSpeciale(
+            @PathVariable String autorisationSpecialeId) {
+        // Appel au service pour récupérer les membres associés à l'autorisation spéciale
+        List<BaDelegationMembreDto> membres = autorisationService.getMembersByAutorisationSpeciale(autorisationSpecialeId);
+        return ResponseEntity.ok(membres);
     }
 
 }

@@ -27,7 +27,6 @@ public class BaAutorisationSpeciale extends BaAbstractAuditingEntity {
     private LocalDate dateDemande;
 
     @Column(name = "date_arrivee")
-
     private LocalDate dateArrivee;
 
     @Column(name = "date_depart")

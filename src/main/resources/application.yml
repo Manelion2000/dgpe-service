@@ -1,37 +1,38 @@
 server:
-  port: 8080
+  port: 8082
+
 spring:
   profiles:
     active: prod
+
   application:
     name: DgpeService
+
   # Configuration du service mail
   mail:
-    host: mailer.gov.bf
+    host: smtp.gmail.com
     port: 587
-    username: etraduction@diplomatie.gov.bf
-    password: 'EtraductionBit**2024'
+    username: alertesmae@gmail.com
+    password: 'fevh duqq bksu zlcw'
     protocol: smtp
-    properties.mail.smtp:
-      auth: true
-      starttls.enable: true
-      timeout: 50000
-      connectiontimeout: 50000
-      writetimeout: 50000
-      ssl.trust: ${spring.mail.host}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.ssl.trust: smtp.gmail.com
     test-connection: false
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 50MB
 
 # Configuration personnalisée
 app:
   storage:
     path: ./datas
+
   security:
     attempts:
-      # En nombre de minutes
-      timeout: 5
-      # Nombre de tentatives autorisées.
-      max: 5
-servlet:
-  multipart:
-    max-file-size: 10MB
-    max-request-size: 50MB
+      timeout: 5  # En nombre de minutes
+      max: 5      # Nombre de tentatives autorisées
