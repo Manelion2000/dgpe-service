@@ -30,6 +30,8 @@ public interface BaParamService {
 
     List<BaDemandeDto> getDemandeRejeterDg();
 
+    List<BaDemandeDto> getDemandeAttenteRejeterDg();
+
     List<BaDemandeDto> getDemandeRejette();
 
     List<BaDemandeDto> getDemandeEncours();
@@ -70,12 +72,16 @@ public interface BaParamService {
 
     BaDemandeDto rejeterDemandeParDG(String id, BaDemandeDto demandeDtoDto);
 
+    BaDemandeDto rejeterParDG(String id, BaDemandeDto demandeDtoDto);
+
     BaDocument saveDocument(MultipartFile file, BaDocumentDto documentDto);
 
     //BaDocument savePhotoPersonnel(MultipartFile file, BaDocumentDto documentDto);
 
-    @Transactional
-    BaDemandeDto createDemandeWithDocuments(BaDemandeDto demandeDto, List<BaDocumentUploadRequest> documentRequests);
+    BaDemandeDto createDemandeWithDocuments(
+            BaDemandeDto demandeDto,
+            List<BaDocumentDto> documentDtos,
+            List<MultipartFile> files);
 
     BaPhotoPersonnelDto savePhotoPersonnel(MultipartFile file, BaPhotoPersonnelDto photoDto);
 

@@ -23,7 +23,10 @@ public class BaAutorisationSpeciale extends BaAbstractAuditingEntity {
     @Column(name = "id")
     private String id = BaUtils.randomUUID();
 
-    @Column(name = "date_demande")
+    @Column(name="numero")
+    private String numDemande;
+
+    @Column(name = "date_demande", unique = true)
     private LocalDate dateDemande;
 
     @Column(name = "date_arrivee")

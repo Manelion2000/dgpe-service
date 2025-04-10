@@ -31,6 +31,8 @@ public class BaDemandeDto {
 
     private String motifRejet;
 
+    private String motifRejet_dg;
+
     private EStatus status=EStatus.ENCOURS;
 
     private EstatusDg estatusDg=EstatusDg.ENCOURS;

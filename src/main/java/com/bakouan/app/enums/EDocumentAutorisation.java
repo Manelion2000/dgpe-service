@@ -6,5 +6,6 @@ public enum EDocumentAutorisation {
     PASSEPORT_SERVICE,
     LISTE_DELEGATION,
     BILLET_AVION,
+    PASSEPORT,
     AUTRE
 }

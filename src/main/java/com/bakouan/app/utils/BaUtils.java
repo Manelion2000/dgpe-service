@@ -23,9 +23,25 @@ public class BaUtils {
      * @return
      */
     public static String generateNumeroDemande(String typeCarte, long sequence) {
-        String year = String.valueOf(Year.now().getValue()).substring(1); // Récupère les deux derniers chiffres de l'année
+        String year = String.valueOf(Year.now().getValue()).substring(1); // Récupère les trois derniers chiffres de l'année
         return String.format("BF-%s%s-%03d", typeCarte, year, sequence);
     }
+
+    public static String generateNumeroAutorisation(long sequence) {
+        String year = String.valueOf(Year.now().getValue()).substring(1);
+        return String.format("BF-AU-%s-%03d", year, sequence);
+    }
+
+    public static String generateNextNumeroAutorisation(String lastNumero, String year) {
+        int nextSequence = 1;
+        if (lastNumero != null && lastNumero.matches("BF-AU-" + year + "-\\d{3}")) {
+            String[] parts = lastNumero.split("-");
+            nextSequence = Integer.parseInt(parts[3]) + 1;
+        }
+        return String.format("BF-AU-%s-%03d", year, nextSequence);
+    }
+
+
 
     /**
      * Genère et retourne un idantifiant unique.

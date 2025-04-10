@@ -7,6 +7,6 @@ public enum EStatus {
     REJETER,
     REJETER_DG,
     PRODUIT,
-    DELIVRE
-
+    DELIVRE,
+    ATTENTE_REJET_DG
 }

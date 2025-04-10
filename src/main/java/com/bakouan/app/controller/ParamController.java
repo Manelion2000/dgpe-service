@@ -116,9 +116,10 @@ public class ParamController {
     @PostMapping(value = BaConstants.URL.DEMANDE + "/demandes", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BaDemandeDto> createDemandeWithDocuments(
             @RequestPart("demande") @Valid BaDemandeDto demandeDto,
-            @RequestPart("documents") List<BaDocumentUploadRequest> documents
-    ) {
-        BaDemandeDto createdDemande = paramService.createDemandeWithDocuments(demandeDto, documents);
+            @RequestPart("documents") List<BaDocumentDto> documentDtos,
+            @RequestPart("files") List<MultipartFile> files) {
+
+        BaDemandeDto createdDemande = paramService.createDemandeWithDocuments(demandeDto,documentDtos, files);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdDemande);
     }
 
@@ -155,6 +156,15 @@ public class ParamController {
     @GetMapping(BaConstants.URL.DEMANDE+"/rejeterdg")
     public List<BaDemandeDto> getDemandesRejeterDg() {
         return paramService.getDemandeRejeterDg();
+    }
+
+ /**
+     * Retourne la liste des demandes en attente de la validation du rejet du DG par le service technique
+     * @return Liste de BaDemandeDto
+     */
+    @GetMapping(BaConstants.URL.DEMANDE+"/attente_rejet")
+    public List<BaDemandeDto> getDemandesAttenteRejeterDg() {
+        return paramService.getDemandeAttenteRejeterDg();
     }
 
     /**
@@ -295,6 +305,16 @@ public class ParamController {
     @PatchMapping(BaConstants.URL.DEMANDE + "/rejeter_dg/{id}")
     public ResponseEntity<BaDemandeDto> rejeterDemandeParDg(@PathVariable final String id, @RequestBody final BaDemandeDto demandeDto) {
         return ResponseEntity.ok(paramService.rejeterDemandeParDG(id, demandeDto));
+    }
+/**
+     * Rejeter une demande existante.
+     * @param id l'identifiant de la demande
+     * @param demandeDto les détails de la demande
+     * @return {@link ResponseEntity} contenant la demande rejetée
+     */
+    @PatchMapping(BaConstants.URL.DEMANDE + "/rejet_attente_dg/{id}")
+    public ResponseEntity<BaDemandeDto> rejeterDG(@PathVariable final String id, @RequestBody final BaDemandeDto demandeDto) {
+        return ResponseEntity.ok(paramService.rejeterParDG(id, demandeDto));
     }
 
     /**
@@ -577,6 +597,31 @@ public class ParamController {
                 HttpStatus.OK
         );
     }
+
+    /**
+     * Retourne les demandes par type de carte (CARTE_ACCES) et statut (EN_ATTENTE_REJET).
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/acces/attente")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeCarteAccesAttenteRejet() {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.ATTENTE_REJET_DG),
+                HttpStatus.OK
+        );
+    }
+    /**
+     * Retourne les demandes par type de carte (DIPLOMATIQUE) et statut (EN_ATTENTE_REJET).
+     *
+     * @return une liste de demandes filtrées par type de carte et statut.
+     */
+    @GetMapping(BaConstants.URL.DEMANDE +"/carte/attente")
+    public ResponseEntity<List<BaDemandeDto>> getDemandeAtenteAttenteRejet() {
+        return new ResponseEntity<>(
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_DIPLOMATIQUE, EStatus.ATTENTE_REJET_DG),
+                HttpStatus.OK
+        );
+    }
     /**
      * Retourne les demandes par type de carte(en paramètre) et statut (VALIGER_DG).
      *
@@ -674,7 +719,7 @@ public class ParamController {
     @GetMapping(BaConstants.URL.DEMANDE +"/acces/rejetter")
     public ResponseEntity<List<BaDemandeDto>> getDemandeCarteAccesRejetterST() {
         return new ResponseEntity<>(
-                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.REJETER),
+                paramService.getDemandeParTypeEtStatus(ECarte.CARTE_ACCES, EStatus.REJETER_DG),
                 HttpStatus.OK
         );
     }

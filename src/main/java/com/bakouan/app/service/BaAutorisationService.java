@@ -2,7 +2,10 @@ package com.bakouan.app.service;
 
 import com.bakouan.app.dto.BaAutorisationSpecialeDto;
 import com.bakouan.app.dto.BaDelegationMembreDto;
+import com.bakouan.app.dto.BaDocumentDto;
+import com.bakouan.app.dto.BaDocumentPersonnelAutorisationSpecialDto;
 import com.bakouan.app.enums.EEtatAutorisation;
+import jakarta.transaction.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -32,6 +35,10 @@ public interface BaAutorisationService {
     List<BaAutorisationSpecialeDto> findValiderParEtat(EEtatAutorisation etatAutorisation);
 
     BaDelegationMembreDto createMember(BaDelegationMembreDto dto);
+
+    BaDelegationMembreDto createMember(BaDelegationMembreDto dto,
+                                       List<BaDocumentPersonnelAutorisationSpecialDto> docDtoList,
+                                       List<MultipartFile> files);
 
     BaDelegationMembreDto addDocumentToMember(String membreId, MultipartFile file);
 

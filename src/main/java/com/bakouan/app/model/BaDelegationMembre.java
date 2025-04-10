@@ -30,6 +30,7 @@ public class BaDelegationMembre extends BaAbstractAuditingEntity {
     @Column(name = "fonction")
     private String fonction;
 
+
     @ManyToOne
     @JoinColumn(name = "autorisation_speciale_id")
     private BaAutorisationSpeciale autorisationSpeciale;

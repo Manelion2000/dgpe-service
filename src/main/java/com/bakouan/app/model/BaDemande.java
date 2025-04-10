@@ -141,6 +141,9 @@ public class BaDemande extends BaAbstractAuditingEntity{
     @Column(name = "motif")
     private String motifRejet;
 
+    @Column(name = "motif_dg")
+    private String motifRejet_dg;
+
     @Enumerated(value = EnumType.STRING)
     @Column(name = "status")
     private EStatus status=EStatus.ENCOURS;

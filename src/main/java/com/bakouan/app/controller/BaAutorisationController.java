@@ -2,6 +2,7 @@ package com.bakouan.app.controller;
 
 import com.bakouan.app.dto.BaAutorisationSpecialeDto;
 import com.bakouan.app.dto.BaDelegationMembreDto;
+import com.bakouan.app.dto.BaDocumentPersonnelAutorisationSpecialDto;
 import com.bakouan.app.service.BaAutorisationService;
 import com.bakouan.app.service.BaFileStorageService;
 import com.bakouan.app.utils.BaConstants;
@@ -122,21 +123,16 @@ public class BaAutorisationController {
      * Endpoint pour créer un membre de délégation.
      * Le DTO est validé grâce à JSR-303 (annotations dans le DTO) avant d'être traité.
      * @param membreDto Le DTO contenant les informations du membre.
-     * @param bindingResult Contient les erreurs de validation, le cas échéant.
      * @return Le membre créé avec le code HTTP 201 (Created).
      */
     @PostMapping(BaConstants.URL.AUTORISATION+"/membre")
-    public ResponseEntity<BaDelegationMembreDto> createMember(
-            @Valid @RequestBody BaDelegationMembreDto membreDto,
-            BindingResult bindingResult) {
-
-        if (bindingResult.hasErrors()) {
-            // Ici, vous pouvez retourner un message d'erreur détaillé en fonction des contraintes violées.
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Erreur de validation des données du membre.");
-        }
-
-        BaDelegationMembreDto createdMember = autorisationService.createMember(membreDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdMember);
+    public ResponseEntity<BaDelegationMembreDto> createMembre(
+            @RequestPart("membre") @Valid BaDelegationMembreDto membreDto,
+            @RequestPart(value = "documents", required = false) List<BaDocumentPersonnelAutorisationSpecialDto> docDtos,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
+    ) {
+        BaDelegationMembreDto saved = autorisationService.createMember(membreDto, docDtos, files);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     /**

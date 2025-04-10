@@ -1,5 +1,7 @@
 package com.bakouan.app.model;
 
+import com.bakouan.app.enums.EDocument;
+import com.bakouan.app.enums.EDocumentAutorisation;
 import com.bakouan.app.utils.BaUtils;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

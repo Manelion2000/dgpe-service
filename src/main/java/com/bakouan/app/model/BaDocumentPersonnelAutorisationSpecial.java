@@ -1,5 +1,6 @@
 package com.bakouan.app.model;
 
+import com.bakouan.app.enums.EDocumentAutorisation;
 import com.bakouan.app.utils.BaUtils;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -21,6 +22,10 @@ public class BaDocumentPersonnelAutorisationSpecial extends BaAbstractAuditingEn
 
     @Column(name = "url")
     private String url;
+
+    @Enumerated(value =EnumType.STRING)
+    @Column(name = "type_document")
+    private EDocumentAutorisation typeDocument;
 
     @ManyToOne
     @JoinColumn(name = "autorisation_personnel_speciale_id")

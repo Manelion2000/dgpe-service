@@ -18,6 +18,8 @@ public class BaDocumentDto {
 
     private String numDocument;
 
+    private Integer ordre;
+
     private String idDemande;
 
     @NotNull(message="le type de document est obligatoire")

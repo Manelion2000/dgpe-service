@@ -1,5 +1,6 @@
 package com.bakouan.app.dto;
 import com.bakouan.app.enums.EEtatAutorisation;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import lombok.AllArgsConstructor;
@@ -13,6 +14,9 @@ import java.util.Set;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class BaAutorisationSpecialeDto {
     private String id;
+
+    private String numDemande;
+
     @PastOrPresent(message = "La date de demande ne peut être dans le futur")
     private LocalDate dateDemande;
 
@@ -20,7 +24,6 @@ public class BaAutorisationSpecialeDto {
 
     private LocalDate dateDepart;
 
-    @NotNull(message = "L'etat de l'autorisation est obligatoire")
     private EEtatAutorisation etat;// EN_ATTENTE, VALIDE, REJETE
 
     private String idMissionDiplomatique;
@@ -28,6 +31,8 @@ public class BaAutorisationSpecialeDto {
     private String libelleMissionDiplomatique;
 
     private String pays;
+
+    private String userId;
 
     private String motifRejet;
 

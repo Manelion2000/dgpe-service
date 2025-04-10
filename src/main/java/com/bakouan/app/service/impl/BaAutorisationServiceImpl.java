@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.Year;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -69,33 +71,63 @@ public class BaAutorisationServiceImpl implements BaAutorisationService {
      * @return DTO de l'autorisation créée
      */
     @Override
-    public BaAutorisationSpecialeDto create(final BaAutorisationSpecialeDto autorisationSpecialeDto, final MultipartFile noteVerbale) {
+    public BaAutorisationSpecialeDto create(final BaAutorisationSpecialeDto autorisationSpecialeDto,
+                                            final MultipartFile noteVerbale) {
+        // Validation de l'existence de l'utilisateur
+        BaUser user = baUserRepository.findById(autorisationSpecialeDto.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "L'utilisateur est introuvable"));
 
+        // Vérifier qu'au moins une date (d'arrivée ou de départ) est renseignée
         if (autorisationSpecialeDto.getDateDepart() == null && autorisationSpecialeDto.getDateArrivee() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La date d'arrivée ou la date de départ (au moins l'une des deux) est requise.");
         }
-        // Sauvegarde de la note verbale et récupération du chemin d'accès du fichier
+
+        // Sauvegarder la note verbale (PDF) et récupérer le chemin d'accès du fichier
         String noteVerbalePath = baFileStorageService.saveFileDocumentPDF(noteVerbale);
 
-        // Conversion du DTO en entité et initialisation des champs de base
+        // Conversion du DTO en entité
         BaAutorisationSpeciale autorisation = mapper.maps(autorisationSpecialeDto);
-        autorisation.setId(BaUtils.randomUUID());
-        autorisation.setEtat(EEtatAutorisation.EN_ATTENTE);
 
-        // Enregistrement de l'autorisation dans la base de données
+        String currentYear = String.valueOf(Year.now().getValue()).substring(2); // "25"
+        List<String> lastNumList = autorisationRepository.findLastNumeroDemandeForYear(currentYear);
+        String lastNumero = lastNumList.isEmpty() ? null : lastNumList.get(0);
+        String generatedNumero = BaUtils.generateNextNumeroAutorisation(lastNumero, currentYear);
+
+
+        // Gestion facultative de la mission diplomatique
+        if (autorisationSpecialeDto.getIdMissionDiplomatique() != null) {
+            BaMissionDiplomatique mission = missionDiplomatiqueRepository.findById(autorisationSpecialeDto.getIdMissionDiplomatique())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST, "La mission diplomatique est introuvable"));
+            autorisation.setMissionDiplomatique(mission);
+        } else {
+            autorisation.setMissionDiplomatique(null);
+        }
+
+        // Initialisation des autres champs
+
+        autorisation.setNumDemande(generatedNumero);
+        autorisation.setUser(user);
+        autorisation.setEtat(EEtatAutorisation.EN_ATTENTE);
+        autorisation.setDateDemande(LocalDate.now());
+
+        // Enregistrement de l'autorisation dans la base
         BaAutorisationSpeciale savedAutorisation = autorisationRepository.save(autorisation);
 
-        // Création et association d'un document pour la note verbale
+        // Création et enregistrement du document associé : la note verbale
         BaDocumentAutorisationSpecial document = new BaDocumentAutorisationSpecial();
+        document.setId(BaUtils.randomUUID());
         document.setUrl(noteVerbalePath);
         document.setLibelle("Note Verbale");
         document.setAutorisationSpeciale(savedAutorisation);
         documentAutorisationRepository.save(document);
 
-        // Retour du DTO converti depuis l'entité sauvegardée
+        // Retour du DTO correspondant à l'autorisation enregistrée
         return mapper.maps(savedAutorisation);
     }
+
 
     /**
      * Ajout d'une note verbale à une autorisation spéciale existante.
@@ -351,15 +383,69 @@ public class BaAutorisationServiceImpl implements BaAutorisationService {
      */
     @Override
     public BaDelegationMembreDto createMember(BaDelegationMembreDto dto) {
-        // Conversion du DTO en entité
+        // Validation de l'autorisation
+        BaAutorisationSpeciale autorisation = autorisationRepository.findById(dto.getIdAutorisationSpeciale())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Autorisation spéciale introuvable"));
+
+        // Mapping et initialisation
         BaDelegationMembre membre = mapper.maps(dto);
-        // Génération d'un identifiant unique pour le membre
         membre.setId(BaUtils.randomUUID());
-        // Sauvegarde du membre dans la base de données
+        membre.setAutorisationSpeciale(autorisation);
+
+        // Sauvegarde
         BaDelegationMembre savedMembre = delegationMembreRepository.save(membre);
-        // Conversion de l'entité sauvegardée en DTO et retour
+
         return mapper.maps(savedMembre);
     }
+
+    @Override
+    public BaDelegationMembreDto createMember(BaDelegationMembreDto dto,
+                                              List<BaDocumentPersonnelAutorisationSpecialDto> docDtoList,
+                                              List<MultipartFile> files) {
+
+        // Vérification de l'autorisation
+        BaAutorisationSpeciale autorisation = autorisationRepository.findById(dto.getIdAutorisationSpeciale())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Autorisation spéciale introuvable"));
+
+        // Mapping DTO -> Entité
+        BaDelegationMembre membre = mapper.maps(dto);
+        membre.setId(BaUtils.randomUUID());
+        membre.setAutorisationSpeciale(autorisation);
+
+        // Sauvegarde du membre
+        BaDelegationMembre savedMembre = delegationMembreRepository.save(membre);
+
+        // Association des documents
+        if (docDtoList != null && files != null) {
+            if (docDtoList.size() != files.size()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le nombre de fichiers ne correspond pas au nombre de métadonnées.");
+            }
+
+            for (int i = 0; i < docDtoList.size(); i++) {
+                BaDocumentPersonnelAutorisationSpecialDto docDto = docDtoList.get(i);
+                MultipartFile file = files.get(i);
+
+                if (file != null && !file.isEmpty()) {
+                    String path = baFileStorageService.saveFileDocumentPDF(file);
+
+                    BaDocumentPersonnelAutorisationSpecial document = new BaDocumentPersonnelAutorisationSpecial();
+                    document.setId(BaUtils.randomUUID());
+                    document.setLibelle(docDto.getLibelle());
+                    document.setTypeDocument(docDto.getTypeDocument());
+                    document.setUrl(path);
+                    document.setMembre(savedMembre);
+
+                    documentMembreDelegationRepository.save(document);
+                }
+            }
+        }
+
+        return mapper.maps(savedMembre);
+    }
+
+
 
     /**
      * Ajoute un document à un membre existant.
