@@ -141,17 +141,15 @@ public class BaDemande extends BaAbstractAuditingEntity{
     @Column(name = "motif")
     private String motifRejet;
 
+    @Column(name = "dure")
+    Integer nombreDeMois;
+
     @Column(name = "motif_dg")
     private String motifRejet_dg;
 
     @Enumerated(value = EnumType.STRING)
     @Column(name = "status")
     private EStatus status=EStatus.ENCOURS;
-
-    @Enumerated(value = EnumType.STRING)
-    @Column(name = "status_dg")
-    private EstatusDg statusDg=EstatusDg.ENCOURS;
-
 
     @OneToMany(mappedBy = "demande", fetch = FetchType.LAZY)
     private Set<BaDocument> documents = new HashSet<>();

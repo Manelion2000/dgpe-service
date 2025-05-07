@@ -28,4 +28,8 @@ public class BaDocumentAutorisationSpecial extends BaAbstractAuditingEntity{
     @ManyToOne
     @JoinColumn(name = "autorisation_speciale_id")
     private BaAutorisationSpeciale autorisationSpeciale;
+
+    @OneToOne(mappedBy = "documentFinal")
+    private BaAutorisationSpeciale autorisationFinalisee;
+
 }

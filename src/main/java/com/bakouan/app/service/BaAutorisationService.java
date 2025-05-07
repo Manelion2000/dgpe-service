@@ -1,17 +1,19 @@
 package com.bakouan.app.service;
 
-import com.bakouan.app.dto.BaAutorisationSpecialeDto;
-import com.bakouan.app.dto.BaDelegationMembreDto;
-import com.bakouan.app.dto.BaDocumentDto;
-import com.bakouan.app.dto.BaDocumentPersonnelAutorisationSpecialDto;
+import com.bakouan.app.dto.*;
 import com.bakouan.app.enums.EEtatAutorisation;
+import com.bakouan.app.enums.ETypeAutorisation;
 import jakarta.transaction.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 public interface BaAutorisationService {
+    List<BaAutorisationSpecialeDto> findByType(ETypeAutorisation type);
+
     BaAutorisationSpecialeDto create(final BaAutorisationSpecialeDto autorisationSpecialeDto, MultipartFile noteVervale);
+
+    void ValiderDemande(String id);
 
     BaAutorisationSpecialeDto uploadNoteVerbale(String autorisationId, MultipartFile noteVerbale);
 
@@ -22,7 +24,7 @@ public interface BaAutorisationService {
     void delete(final String id);
     BaAutorisationSpecialeDto findById(final String id);
     BaAutorisationSpecialeDto validateSt(final String id);
-    BaAutorisationSpecialeDto rejectSt(final String id);
+    BaAutorisationSpecialeDto rejectSt(final String id, BaAutorisationSpecialeDto auDto);
     BaAutorisationSpecialeDto validateDg(final String id);
     BaAutorisationSpecialeDto rejectDg(final String id);
     List<BaAutorisationSpecialeDto> findAll();
@@ -40,6 +42,9 @@ public interface BaAutorisationService {
                                        List<BaDocumentPersonnelAutorisationSpecialDto> docDtoList,
                                        List<MultipartFile> files);
 
+    @Transactional
+    void deleteMember(String membreId);
+
     BaDelegationMembreDto addDocumentToMember(String membreId, MultipartFile file);
 
     BaDelegationMembreDto removeDocumentFromMember(String membreId, String documentId);
@@ -49,4 +54,8 @@ public interface BaAutorisationService {
     List<BaDelegationMembreDto> getAllMembers();
 
     List<BaDelegationMembreDto> getMembersByAutorisationSpeciale(String autorisationSpecialeId);
+
+    BaDocumentAutorisationSpecialDto uploadDocumentFinal(String autorisationId, MultipartFile fichierFinal);
+
+    void deleteDocumentFinal(String autorisationId);
 }

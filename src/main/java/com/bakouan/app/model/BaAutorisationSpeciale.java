@@ -1,6 +1,8 @@
 package com.bakouan.app.model;
 
+import com.bakouan.app.dto.BaDocumentAutorisationSpecialDto;
 import com.bakouan.app.enums.EEtatAutorisation;
+import com.bakouan.app.enums.ETypeAutorisation;
 import com.bakouan.app.utils.BaUtils;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -48,9 +50,17 @@ public class BaAutorisationSpeciale extends BaAbstractAuditingEntity {
     @Enumerated(EnumType.STRING)
     private EEtatAutorisation etat;
 
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "type_autorisation")
+    private ETypeAutorisation typeAutorisation;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private BaUser user;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "document_final_id", referencedColumnName = "id")
+    private BaDocumentAutorisationSpecial documentFinal;
 
     @OneToMany(mappedBy = "autorisationSpeciale", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<BaDocumentAutorisationSpecial> documents = new HashSet<>();

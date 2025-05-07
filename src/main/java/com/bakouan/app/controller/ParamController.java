@@ -1,21 +1,18 @@
 package com.bakouan.app.controller;
 
 import com.bakouan.app.dto.*;
-import com.bakouan.app.enums.ECarte;
-import com.bakouan.app.enums.EStatus;
-import com.bakouan.app.enums.EStatut;
-import com.bakouan.app.enums.ETypeDemandeur;
+import com.bakouan.app.enums.*;
+import com.bakouan.app.model.BaDocument;
 import com.bakouan.app.service.BaFileStorageService;
 import com.bakouan.app.service.BaParamService;
 import com.bakouan.app.utils.BaConstants;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -145,14 +142,6 @@ public class ParamController {
      * Retourne la liste des demandes validées par le dg
      * @return Liste de BaDemandeDto
      */
-    @GetMapping(BaConstants.URL.DEMANDE+"/validerdg")
-    public List<BaDemandeDto> getDemandesValiderParDg() {
-        return paramService.getDemandeValiderDg();
-    }
-    /**
-     * Retourne la liste des demandes validées par le dg
-     * @return Liste de BaDemandeDto
-     */
     @GetMapping(BaConstants.URL.DEMANDE+"/rejeterdg")
     public List<BaDemandeDto> getDemandesRejeterDg() {
         return paramService.getDemandeRejeterDg();
@@ -174,6 +163,15 @@ public class ParamController {
     @GetMapping(BaConstants.URL.DEMANDE+"/valider_st")
     public List<BaDemandeDto> getDemandesValiderST() {
         return paramService.getDemandeValider();
+    }
+
+    /**
+     * Retourne la liste des demandes valider par DG(diplomatiques et acces)
+     * @return Liste de BaDemandeDto
+     */
+    @GetMapping(BaConstants.URL.DEMANDE+"/valider_dg")
+    public List<BaDemandeDto> getDemandesValiderDG() {
+        return paramService.getDemandeValiderDg();
     }
     /**
      * Récupère la liste des demandes validées ou rejetées (selon les conditions spécifiques).
@@ -266,7 +264,7 @@ public class ParamController {
      * @param demandeDto les détails de la demande
      * @return {@link ResponseEntity} contenant la demande validée
      */
-    @PatchMapping(BaConstants.URL.DEMANDE + "/retirer/{id}")
+    @PatchMapping(BaConstants.URL.DEMANDE + "/delivrer/{id}")
     public ResponseEntity<BaDemandeDto> retirerDemande(@PathVariable final String id, @RequestBody final BaDemandeDto demandeDto) {
         return ResponseEntity.ok(paramService.retirerDemande(id, demandeDto));
     }
@@ -781,6 +779,24 @@ public class ParamController {
     }
 
     /**
+     * Endpoint pour produire une carte pour une demande.
+     */
+    @PostMapping(BaConstants.URL.CARTE +"/production/{idDemande}")
+    public ResponseEntity<BaCarteDto> produireCarte(@PathVariable String idDemande, @RequestBody BaDemandeDto demande) {
+        BaCarteDto carteProduite = paramService.createCarteProduction(idDemande, demande);
+        return ResponseEntity.ok(carteProduite);
+    }
+
+    /**
+     * Endpoint pour produire des cartes à partir d'une liste de demandes.
+     */
+    @PostMapping(BaConstants.URL.CARTE+"/production/liste")
+    public ResponseEntity<List<BaCarteDto>> produireCartesDepuisDemandes(@RequestBody List<BaDemandeDto> demandes) {
+        List<BaCarteDto> cartesProduites = paramService.listeCarteProduit(demandes);
+        return ResponseEntity.ok(cartesProduites);
+    }
+
+    /**
      * Récupère la liste des cartes diplomatiques actifs.
      *
      * @return la liste des cartes filtrées sous forme de DTO.
@@ -942,5 +958,21 @@ public class ParamController {
         BaStatistiqueCarteDto stats = paramService.getCarteStatisticsForCurrentYear();
         return ResponseEntity.ok(stats);
     }
+
+    /**
+     * End point pour retourner un lire un fichier phot
+     * @param idDemande: id de la demande
+     * @param download: boolean
+     * @return : un tableau de byte
+     */
+    @GetMapping(BaConstants.URL.DOCUMENT + "/photo/{idDemande}")
+    public ResponseEntity<byte[]> lireOuTelechargerPhoto(
+            @PathVariable final String idDemande,
+            @RequestParam(name = "download", defaultValue = "true") boolean download) {
+
+        return paramService.lireOuTelechargerPhoto(idDemande, download);
+    }
+
+
 
 }

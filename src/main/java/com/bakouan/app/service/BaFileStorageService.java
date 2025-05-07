@@ -1,11 +1,7 @@
 package com.bakouan.app.service;
 
-import com.bakouan.app.model.BaDocument;
-import com.bakouan.app.model.BaPersonnelDgpe;
-import com.bakouan.app.model.BaPhotoPersonnel;
-import com.bakouan.app.repositories.BaDocumentRepository;
-import com.bakouan.app.repositories.BaPersonnelRepository;
-import com.bakouan.app.repositories.BaPhotoPersonnelRepository;
+import com.bakouan.app.model.*;
+import com.bakouan.app.repositories.*;
 import com.bakouan.app.utils.BaUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +35,8 @@ public class BaFileStorageService {
     private final BaDocumentRepository baDocumentRepository;
     private final BaPersonnelRepository baPersonnelRepository;
     private final BaPhotoPersonnelRepository baPhotoPersonnelRepository;
+    private final BaDocumentAutorisationRepository documentAutorisationSpecial;
+    private final BaDocumentMembreDelegationRepository documentPersonnelAutorisationSpecial;
 
     /**
      * Récupérer le contenu d'un fichier.
@@ -286,6 +284,82 @@ public class BaFileStorageService {
         } catch (IOException e) {
             log.error("Failed to remove file", e);
             return false;
+        }
+    }
+
+    public void deleteFile(String path) {
+        try {
+            String fullPath = path.replace("\\", "/").replaceAll("^/+", "").trim();
+            File file = new File(basePath + File.separator + fullPath);
+            if (file.exists()) {
+                if (file.delete()) {
+                    log.info("Fichier supprimé avec succès : {}", path);
+                } else {
+                    log.warn("Impossible de supprimer le fichier : {}", path);
+                }
+            } else {
+                log.warn("Fichier non trouvé : {}", path);
+            }
+        } catch (Exception e) {
+            log.error("Erreur lors de la suppression du fichier : {}", path, e);
+            throw new RuntimeException("Erreur lors de la suppression du fichier.");
+        }
+    }
+
+
+    /**
+     * Récupérer le contenu d'un fichier d'une autorisation spéciale (Note Verbale)
+     * @param idDoc identifiant du fichier.
+     * @return un tableau de byte
+     */
+    public byte[] getDocumentAutorisationSpeciale(final String idDoc) {
+
+        BaDocumentAutorisationSpecial document= documentAutorisationSpecial.findById(idDoc).orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "Le document introuvable avec id" +idDoc));
+        // Construire le chemin complet du fichier
+        String fullPath = basePath + File.separator + document.getUrl();
+        File file = new File(fullPath);
+
+        try {
+            // Vérifier si le fichier existe
+            if (file.exists()) {
+                log.info("Chargement du fichier : {}", fullPath);
+                return Files.readAllBytes(file.toPath());
+            } else {
+                log.warn("Fichier inexistant au chemin : {}", fullPath);
+                throw new FileNotFoundException("Le fichier avec l'ID " + idDoc + " n'existe pas dans le répertoire " + basePath);
+            }
+        } catch (IOException e) {
+            log.error("Erreur lors de la lecture du fichier : " + idDoc, e);
+            throw new RuntimeException("Erreur de lecture du fichier " + idDoc, e);
+        }
+    }
+
+    /**
+     * Récupérer le contenu d'un fichier des membres de la délegation pour une autorisation spéciale
+     * @param idDoc identifiant du fichier.
+     * @return un tableau de byte
+     */
+    public byte[] getDocumentMembreAutorisationSpeciale(final String idDoc) {
+
+        BaDocumentPersonnelAutorisationSpecial document= documentPersonnelAutorisationSpecial.findById(idDoc).orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "Le document introuvable avec id" +idDoc));
+        // Construire le chemin complet du fichier
+        String fullPath = basePath + File.separator + document.getUrl();
+        File file = new File(fullPath);
+
+        try {
+            // Vérifier si le fichier existe
+            if (file.exists()) {
+                log.info("Chargement du fichier : {}", fullPath);
+                return Files.readAllBytes(file.toPath());
+            } else {
+                log.warn("Fichier inexistant au chemin : {}", fullPath);
+                throw new FileNotFoundException("Le fichier avec l'ID " + idDoc + " n'existe pas dans le répertoire " + basePath);
+            }
+        } catch (IOException e) {
+            log.error("Erreur lors de la lecture du fichier : " + idDoc, e);
+            throw new RuntimeException("Erreur de lecture du fichier " + idDoc, e);
         }
     }
 }

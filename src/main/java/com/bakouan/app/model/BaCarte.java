@@ -36,4 +36,7 @@ public class BaCarte extends BaAbstractAuditingEntity{
     @JoinColumn(name="ba_carte_id")
     private BaDemande demande;
 
+    @Column(name = "dure")
+    Integer nombreDeMois;
+
 }

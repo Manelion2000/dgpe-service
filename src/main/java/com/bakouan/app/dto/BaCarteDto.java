@@ -1,6 +1,8 @@
 package com.bakouan.app.dto;
 
+import com.bakouan.app.enums.ECarte;
 import com.bakouan.app.enums.ESexe;
+import com.bakouan.app.enums.ETypeDemandeur;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -36,8 +38,20 @@ public class BaCarteDto {
 
     private LocalDate dateNaissance;
 
+    private String lieuNaissance;
+
+    private String institution;
+
     private String fonction;
 
     private ESexe sexe;
+
+    private ECarte carte;
+
+    private ETypeDemandeur demandeur;
+
+
+
+    Integer nombreDeMois;
 
 }

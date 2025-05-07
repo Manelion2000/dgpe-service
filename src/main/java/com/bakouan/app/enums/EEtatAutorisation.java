@@ -6,4 +6,5 @@ public enum EEtatAutorisation {
     REJETE,
     VALIDE_DG,
     REJETER_DG,
+    NON_SOUMIS
 }

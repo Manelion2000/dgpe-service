@@ -1,4 +1,0 @@
-package com.bakouan.app.repositories;
-
-public interface BaDocumentMembreDelegationRepository {
-}

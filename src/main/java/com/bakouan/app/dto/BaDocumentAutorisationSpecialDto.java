@@ -1,8 +1,5 @@
 package com.bakouan.app.dto;
 
-import com.bakouan.app.enums.EDocument;
-import com.bakouan.app.enums.EDocumentAutorisation;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

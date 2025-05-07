@@ -33,9 +33,8 @@ public class BaDemandeDto {
 
     private String motifRejet_dg;
 
-    private EStatus status=EStatus.ENCOURS;
+    Integer nombreDeMois;
 
-    private EstatusDg estatusDg=EstatusDg.ENCOURS;
 
     /**
      * Information propre au demandeur
@@ -67,6 +66,7 @@ public class BaDemandeDto {
 
     private ESexe sexe;
 
+    private EStatus status;
 
     private LocalDate datePriseFonction;
 

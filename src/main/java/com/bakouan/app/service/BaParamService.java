@@ -6,6 +6,7 @@ import com.bakouan.app.model.BaDocument;
 import com.bakouan.app.model.BaPersonnelDgpe;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,11 +23,9 @@ public interface BaParamService {
 
     List<BaDemandeDto> getDemandeValider();
 
-    List<BaDemandeDto> getDemandesValidOrRejected();
-
     List<BaDemandeDto> getDemandeValiderDg();
 
-    List<BaDemandeDto> getDemandeValiderParDg();
+    List<BaDemandeDto> getDemandesValidOrRejected();
 
     List<BaDemandeDto> getDemandeRejeterDg();
 
@@ -50,8 +49,6 @@ public interface BaParamService {
 
     List<BaDemandeDto> getDemandesRejectedByDGAndCarte(ECarte eCarte);
 
-    List<BaDemandeDto> getDemandeParStatusEtStatusDg(EStatus eStatus, EstatusDg eStatusDg);
-
     BaDemandeDto getDemandeByid(String id);
 
     BaDemandeDto createDemande(BaDemandeDto demandeDto);
@@ -59,8 +56,6 @@ public interface BaParamService {
     BaDemandeDto validerDemande(String id, BaDemandeDto demandeDtoDto);
 
     BaDemandeDto validerDemandeParDg(String id, BaDemandeDto demandeDtoDto);
-
-    BaDemandeDto validerDemandeParDG(String id, BaDemandeDto demandeDtoDto);
 
     BaDemandeDto produireDemande(String id, BaDemandeDto demandeDtoDto);
 
@@ -127,6 +122,16 @@ public interface BaParamService {
 
     BaCarteDto createCarteEnProduction(String idDemande, Integer moisExpiration);
 
+    //BaCarteDto createCarteProduction(String idDemande);
+
+    /*@Override
+    public BaCarteDto createCarteProduction(String idDemande) {
+        return null;
+    }*/
+    List<BaCarteDto> listeCarteProduit(List<BaDemandeDto> demande);
+
+    BaCarteDto createCarteProduction(String idDemande, BaDemandeDto demandeDto);
+
     @Scheduled(cron = "0 0 0 * * *")
     void desactiverCartesExpirees();
 
@@ -148,4 +153,5 @@ public interface BaParamService {
 
     BaStatistiqueCarteDto getCarteStatisticsForCurrentYear();
 
+    ResponseEntity<byte[]> lireOuTelechargerPhoto(String demandeId, boolean download);
 }

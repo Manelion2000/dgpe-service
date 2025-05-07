@@ -14,17 +14,14 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.factory.Mappers;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -91,6 +88,18 @@ public List<BaDemandeDto> getAllDemandesArchive() {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Fonction permettant de retourner la liste de demande validée
+     * @return une liste de demande valide par le DG
+     */
+    @Override
+    public List<BaDemandeDto> getDemandeValiderDg() {
+        return baDemandeRepository.findByStatus(EStatus.VALIDER_DG)
+                .stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
 @Override
 public List<BaDemandeDto> getDemandesValidOrRejected() {
         List<BaDemande> demandes = baDemandeRepository.findValidOrRejectedAccessCards(
@@ -103,21 +112,6 @@ public List<BaDemandeDto> getDemandesValidOrRejected() {
                 .collect(Collectors.toList());
     }
 
-
-    @Override
-    public List<BaDemandeDto> getDemandeValiderDg() {
-        return baDemandeRepository.findByStatus(EStatus.VALIDER_DG)
-                .stream()
-                .map(mapper::maps)
-                .collect(Collectors.toList());
-    }
-    @Override
-    public List<BaDemandeDto> getDemandeValiderParDg() {
-        return baDemandeRepository.findByStatusDg(EstatusDg.VALIDER)
-                .stream()
-                .map(mapper::maps)
-                .collect(Collectors.toList());
-    }
 
     @Override
     public List<BaDemandeDto> getDemandeRejeterDg() {
@@ -236,20 +230,6 @@ public List<BaDemandeDto> getDemandesValidOrRejected() {
     }
 
 
-    /**
-     * Retourne une liste de demandes par type de carte et statut.
-     *
-     * @param eStatusDg: stuts de Dg.
-     * @param eStatus le statut des demandes.
-     * @return une liste de demandes filtrées par type de carte et statut.
-     */
-    @Override
-    public List<BaDemandeDto> getDemandeParStatusEtStatusDg(EStatus eStatus, EstatusDg eStatusDg) {
-        return baDemandeRepository.findByStatusAndStatusDg(eStatus, eStatusDg)
-                .stream()
-                .map(mapper::maps)
-                .collect(Collectors.toList());
-    }
     /**
      * Fonction permettant de rétourner une demande par son id
      * @param id: id de l'utilisateur
@@ -410,21 +390,7 @@ public BaDemandeDto getDemandeByid(String id) {
 
     }
 
-    @Override
-    public BaDemandeDto validerDemandeParDG(final String id, final BaDemandeDto demandeDtoDto) {
-        logService.log(new BaLogDto(EAction.U, "Validation de la demande " + id));
 
-        BaDemande demande= baDemandeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
-
-        demande.setStatusDg(EstatusDg.VALIDER);
-        demande.setDateValidationDg(LocalDate.now());
-        // Vous pouvez modifier ou passer le motif depuis une méthode
-        BaDemande updatedDemande = baDemandeRepository.save(demande);
-        return mapper.maps(updatedDemande);
-
-
-    }
     /**
      * Fonction permettant e changer l'état de la carte à PRODUITE d'une demande
      * @param id: id de demande
@@ -449,6 +415,8 @@ public BaDemandeDto getDemandeByid(String id) {
 
     }
 
+
+
     /**
      * Fonction permettant e changer l'état de la carte à RETIRER d'une demande
      * @param id: id de demande
@@ -456,18 +424,24 @@ public BaDemandeDto getDemandeByid(String id) {
      */
     @Override
     public BaDemandeDto retirerDemande(final String id, final BaDemandeDto demandeDtoDto) {
-        logService.log(new BaLogDto(EAction.U, "Validation de la demande " + id));
+        logService.log(new BaLogDto(EAction.U, "Retrait de la demande " + id));
 
-        BaDemande demande= baDemandeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
+        BaDemande demande = baDemandeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette demande n'existe pas."));
 
-        demande.setStatus(EStatus.PRODUIT);
+        // Vérifie si la carte a bien été produite avant de permettre le retrait
+        if (demande.getStatus() != EStatus.PRODUIT) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La carte n'est pas encore produite. Retrait impossible.");
+        }
+
+        // Marquer la demande comme délivrée
+        demande.setStatus(EStatus.DELIVRE);
         demande.setDateRetrait(LocalDate.now());
-        // Vous pouvez modifier ou passer le motif depuis une méthode
+
         BaDemande updatedDemande = baDemandeRepository.save(demande);
         return mapper.maps(updatedDemande);
-
     }
+
     /**
      * Fonction de rejet une demande par le service technique.
      * @param id: id de la demande
@@ -1074,6 +1048,82 @@ public BaDemandeDto getDemandeByid(String id) {
 
     }
 
+    /*@Override
+    public BaCarteDto createCarteProduction(String idDemande) {
+        return null;
+    }*/
+    @Override
+    public List<BaCarteDto> listeCarteProduit(List<BaDemandeDto> demandes) {
+        List<BaCarteDto> listeCarte = new ArrayList<>();
+
+        for (BaDemandeDto demandeDto : demandes) {
+            String demandeId = demandeDto.getId();
+
+            try {
+                // Vérifie s’il existe une carte active pour cette demande
+                Optional<BaCarte> carteActive = baCarteRepository.findByDemandeId(demandeId).stream()
+                        .filter(c -> c.getDateExpiration() != null && c.getDateExpiration().isAfter(LocalDate.now()))
+                        .findFirst();
+
+                if (carteActive.isPresent()) {
+                    // Ajouter la carte active existante
+                    listeCarte.add(mapper.maps(carteActive.get()));
+                    logService.log(new BaLogDto(EAction.V, "Carte active récupérée pour la demande : " + demandeId));
+                } else {
+                    // Produire une nouvelle carte car aucune active n’existe
+                    BaCarteDto nouvelleCarte = createCarteProduction(demandeId, demandeDto);
+                    listeCarte.add(nouvelleCarte);
+                    logService.log(new BaLogDto(EAction.C, "Nouvelle carte produite pour la demande : " + demandeId));
+                }
+
+            } catch (ResponseStatusException e) {
+                // Gérer proprement l’erreur pour ne pas bloquer les autres demandes
+                logService.log(new BaLogDto(EAction.U, "Erreur pour la demande " + demandeId + " : " + e.getReason()));
+            }
+        }
+
+        return listeCarte;
+    }
+
+
+
+    @Override
+    public BaCarteDto createCarteProduction(String idDemande, BaDemandeDto demandeDto) {
+        BaDemande demande = baDemandeRepository.findById(idDemande)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Demande introuvable."));
+
+        boolean carteActiveExiste = baCarteRepository.findByDemandeId(idDemande).stream()
+                .anyMatch(c -> c.getDateExpiration() != null && c.getDateExpiration().isAfter(LocalDate.now()));
+        if (carteActiveExiste) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Une carte active existe déjà pour cette demande.");
+        }
+
+        BaCarte carte = new BaCarte();
+        carte.setId(BaUtils.randomUUID());
+        carte.setDateProduction(LocalDate.now());
+        carte.setDemande(demande);
+
+        switch (demande.getECarte()) {
+            case CARTE_DIPLOMATIQUE -> carte.setDateExpiration(LocalDate.now().plusYears(3));
+            case CARTE_ACCES -> carte.setDateExpiration(LocalDate.now().plusYears(1));
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Type de carte inconnu.");
+        }
+
+        carte.setCodeProduction(generateCodeProduction(demande));
+        carte.setCodeBarre(generateCodeBarre(demande));
+
+        BaCarte savedCarte = baCarteRepository.save(carte);
+
+        logService.log(new BaLogDto(EAction.C, "Création carte : Demande " + idDemande + ", carte " + carte.getCodeProduction()));
+
+        // Mise à jour du statut de la demande
+        // produireDemande(idDemande, demandeDto);
+
+        return mapper.maps(savedCarte);
+    }
+
+
+
     @Scheduled(cron = "0 0 0 * * *")
     @Override
         public void desactiverCartesExpirees() {
@@ -1261,6 +1311,39 @@ public List<BaStatistiquesDto> getDemandesByMonth() {
         int currentYear = LocalDate.now().getYear(); // Année actuelle
         return getCarteStatisticsByYear(currentYear);
     }
+
+    /**
+     * End point pour télecharer un document
+     * @param demandeId:Id de la demande
+     * @return
+     */
+
+
+@Override
+public ResponseEntity<byte[]> lireOuTelechargerPhoto(String demandeId, boolean download) {
+        // Récupérer la photo liée à la demande
+        BaDocument photo = baDocumentRepository
+                .findByTypeDocumentAndDemandeId(EDocument.PHOTO, demandeId)
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.BAD_REQUEST,"photo introuvavle"));
+
+        // Lire le fichier
+        byte[] contenu = baFileStorageService.getDocument(photo.getId());
+
+        // Nom du fichier
+        String nomFichier = (photo.getLibelle() != null ? photo.getLibelle() : "photo") + ".jpg";
+
+        // Préparer les en-têtes HTTP
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        headers.setContentDisposition(
+                download
+                        ? ContentDisposition.attachment().filename(nomFichier).build()
+                        : ContentDisposition.inline().filename(nomFichier).build()
+        );
+
+        return new ResponseEntity<>(contenu, headers, HttpStatus.OK);
+    }
+
 
 
 }

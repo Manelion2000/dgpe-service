@@ -182,7 +182,8 @@ public interface YtMapper {
             @Mapping(target = "libelleMissionDiplomatique", source = "missionDiplomatique.libelle"),
             @Mapping(target = "pays", source = "missionDiplomatique.pays"),
             @Mapping(target = "delegation", source = "delegation"),
-            @Mapping(target = "documents", source = "documents")
+            @Mapping(target = "documents", source = "documents"),
+            @Mapping(target = "documentFinal", source = "documentFinal")
     })
     BaAutorisationSpecialeDto maps(BaAutorisationSpeciale entity);
 
@@ -243,6 +244,10 @@ public interface YtMapper {
             @Mapping(target = "dateNaissance", source = "demande.dateNaissance"),
             @Mapping(target = "fonction", source = "demande.fonction"),
             @Mapping(target = "sexe", source = "demande.sexe"),
+            @Mapping(target = "carte", source = "demande.ECarte"),
+            @Mapping(target = "lieuNaissance", source = "demande.lieuNaissance"),
+            @Mapping(target = "institution", source = "demande.institution"),
+            @Mapping(target = "demandeur", source = "demande.demandeur")
 
     })
     BaCarteDto maps(BaCarte entity);

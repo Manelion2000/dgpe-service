@@ -123,6 +123,10 @@ public class SecurityConfigForProd {
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.PERSONNEL).permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.PERSONNEL+"/lecture/**").permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT+"/lecture/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT+"/telecharger/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT+"/photo/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.AUTORISATION+"/document/autorisation/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.AUTORISATION+"/document/membre/**").permitAll()
 
                     .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.AUTHENTICATE).permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.CSRF_TOKEN).permitAll()
@@ -132,6 +136,7 @@ public class SecurityConfigForProd {
                    // .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.DEMANDE).hasAuthority(BaRolesConstants.BA_ADMIN)
                     //.requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.MISSION).hasAuthority(BaRolesConstants.BA_ADMIN)
                     .requestMatchers(HttpMethod.POST, BaConstants.URL.BASE_URL + BaConstants.URL.PERSONNEL).hasAuthority(BaRolesConstants.BA_ADMIN)
+
 
                     // Toutes les autres requêtes doivent être authentifiées
                     .anyRequest().authenticated();
