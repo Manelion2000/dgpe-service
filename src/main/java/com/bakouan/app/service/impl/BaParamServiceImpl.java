@@ -1319,20 +1319,31 @@ public List<BaStatistiquesDto> getDemandesByMonth() {
      */
 
 
-@Override
-public ResponseEntity<byte[]> lireOuTelechargerPhoto(String demandeId, boolean download) {
-        // Récupérer la photo liée à la demande
+    @Override
+    public ResponseEntity<byte[]> lireOuTelechargerPhoto(String demandeId, boolean download) {
+        // Étape 1 : Récupérer la photo liée à la demande
         BaDocument photo = baDocumentRepository
                 .findByTypeDocumentAndDemandeId(EDocument.PHOTO, demandeId)
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.BAD_REQUEST,"photo introuvavle"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Photo introuvable pour la demande."));
 
-        // Lire le fichier
+        // Étape 2 : Récupérer la demande pour avoir le nom/prénom
+        BaDemande demande = baDemandeRepository.findById(demandeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Demande introuvable."));
+
+        String nom = demande.getNom() != null ? demande.getNom().trim() : "";
+        String prenom = demande.getPrenom() != null ? demande.getPrenom().trim() : "";
+        String numeroDemande = demande.getNumeroDemande() != null ? demande.getNumeroDemande().trim() : "";
+
+        // Nettoyage des espaces et caractères spéciaux si besoin
+        String nomPrenom = (nom+"-"+prenom+"-"+numeroDemande).replaceAll("\\s+", "").replaceAll("[^a-zA-Z0-9]", "");
+
+        // Étape 3 : Lire le fichier
         byte[] contenu = baFileStorageService.getDocument(photo.getId());
 
-        // Nom du fichier
-        String nomFichier = (photo.getLibelle() != null ? photo.getLibelle() : "photo") + ".jpg";
+        // Étape 4 : Nom du fichier de téléchargement
+        String nomFichier = nomPrenom.isEmpty() ? "photo.jpg" : nomPrenom + ".jpg";
 
-        // Préparer les en-têtes HTTP
+        // Étape 5 : Préparer les en-têtes HTTP
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.IMAGE_JPEG);
         headers.setContentDisposition(
@@ -1341,8 +1352,10 @@ public ResponseEntity<byte[]> lireOuTelechargerPhoto(String demandeId, boolean d
                         : ContentDisposition.inline().filename(nomFichier).build()
         );
 
+        // Étape 6 : Retourner la réponse
         return new ResponseEntity<>(contenu, headers, HttpStatus.OK);
     }
+
 
 
 
