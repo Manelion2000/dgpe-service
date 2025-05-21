@@ -20,9 +20,11 @@ public class BaConstants {
         public static final String CARTE = "/cartes";
         public static final String DEMANDE="/demandes";
         public static final String MISSION="/missions";
+        public static final String MESSAGE="/messages";
         public static final String PERSONNEL="/personnels";
         public static final String AUTORISATION="/autorisations";
         public static final String STATISTIQUE="/statistiques";
+
     }
 
     /**

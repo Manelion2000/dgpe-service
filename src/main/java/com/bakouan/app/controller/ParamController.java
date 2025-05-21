@@ -973,6 +973,16 @@ public class ParamController {
         return paramService.lireOuTelechargerPhoto(idDemande, download);
     }
 
+    /**
+     * Contacter nous
+     */
+    @PostMapping(BaConstants.URL.MESSAGE)
+    public ResponseEntity<String> createContacterNous(@RequestBody @Valid final BaContacterNousDto dto) {
+        paramService.createContacterNous(dto);
+        return ResponseEntity.ok("Message envoyé avec succès !");
+    }
+
+
 
 
 }

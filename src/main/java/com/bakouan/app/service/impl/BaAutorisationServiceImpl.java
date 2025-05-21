@@ -15,11 +15,15 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.factory.Mappers;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.Year;
 import java.util.List;
@@ -31,6 +35,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class BaAutorisationServiceImpl implements BaAutorisationService {
+
+    @Value("${app.storage.path}")
+    private String basePath;
 
     // Mapper pour convertir entre DTO et entité (utilisation de MapStruct)
     private final YtMapper mapper = Mappers.getMapper(YtMapper.class);
@@ -688,35 +695,66 @@ public class BaAutorisationServiceImpl implements BaAutorisationService {
      */
     @Override
     public BaDocumentAutorisationSpecialDto uploadDocumentFinal(String autorisationId, MultipartFile fichierFinal) {
-        // Vérifie si l'autorisation existe
+        // 1. Vérification de l'autorisation
         BaAutorisationSpeciale autorisation = autorisationRepository.findById(autorisationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"Autorisation non trouvée avec l'ID : " + autorisationId));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Autorisation non trouvée avec l'ID : " + autorisationId));
 
-        // Vérifie que l'autorisation est dans un état VALIDE
         if (autorisation.getEtat() != EEtatAutorisation.VALIDE) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"L'autorisation doit être validée avant d'ajouter un document final.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "L'autorisation doit être validée avant d'ajouter un document final.");
         }
 
-        // Sauvegarde du fichier final dans le stockage
+        // 2. Sauvegarde du fichier dans le stockage
         String cheminFichier = baFileStorageService.saveFileDocumentPDF(fichierFinal);
+        Path path = Paths.get(basePath, cheminFichier);
+        File fichierPdf = path.toFile();
 
-        // Création de l'entité document
+        if (!fichierPdf.exists()) {
+            throw new RuntimeException("Le fichier PDF n'existe pas pour l'envoi par e-mail.");
+        }
+
+        // 3. Création et sauvegarde du document en base
         BaDocumentAutorisationSpecial documentFinal = new BaDocumentAutorisationSpecial();
         documentFinal.setId(BaUtils.randomUUID());
         documentFinal.setLibelle("Document Final");
         documentFinal.setUrl(cheminFichier);
         documentFinal.setAutorisationSpeciale(autorisation);
-
-        // Sauvegarde du document dans la base
         documentAutorisationRepository.save(documentFinal);
 
-        // Lier le document à l'autorisation
+        // 4. Mise à jour de l'autorisation avec le document final
         autorisation.setDocumentFinal(documentFinal);
         autorisationRepository.save(autorisation);
 
-        // Retourne un DTO du document final
+        // 5. Préparation et envoi de l’e-mail avec le document final
+        try {
+            String destinataire = autorisation.getUser().getEmail();
+            String nomDestinataire = autorisation.getUser().getPrenom() + " " + autorisation.getUser().getNom();
+            String sujet = "Document final de votre autorisation spéciale";
+
+            StringBuilder messageHtml = new StringBuilder();
+            messageHtml.append("<p>Bonjour <b>").append(nomDestinataire).append("</b>,</p>")
+                    .append("<p>Veuillez trouver en pièce jointe le document final relatif à votre autorisation spéciale validée.</p>")
+                    .append("<p>Cordialement,<br><i>Direction Générale du Protocole d'État</i></p>");
+
+            mailService.sendEmail(
+                    destinataire,
+                    sujet,
+                    messageHtml.toString(),
+                    true,
+                    true,
+                    nomDestinataire,
+                    fichierPdf
+            );
+
+        } catch (Exception e) {
+            log.warn("Échec de l'envoi du document final par email : {}", e.getMessage(), e);
+        }
+
+        // 6. Retour du DTO
         return mapper.maps(documentFinal);
     }
+
 
     /**
      * Service pour supprimer un document final

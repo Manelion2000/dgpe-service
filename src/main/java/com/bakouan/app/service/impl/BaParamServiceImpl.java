@@ -1335,7 +1335,7 @@ public List<BaStatistiquesDto> getDemandesByMonth() {
         String numeroDemande = demande.getNumeroDemande() != null ? demande.getNumeroDemande().trim() : "";
 
         // Nettoyage des espaces et caractères spéciaux si besoin
-        String nomPrenom = (nom+"-"+prenom+"-"+numeroDemande).replaceAll("\\s+", "").replaceAll("[^a-zA-Z0-9]", "");
+        String nomPrenom = (nom+"-"+prenom+"-"+numeroDemande).replaceAll("\\s+", "").replaceAll("[^a-zA-Z0-9]", "_");
 
         // Étape 3 : Lire le fichier
         byte[] contenu = baFileStorageService.getDocument(photo.getId());
@@ -1354,6 +1354,28 @@ public List<BaStatistiquesDto> getDemandesByMonth() {
 
         // Étape 6 : Retourner la réponse
         return new ResponseEntity<>(contenu, headers, HttpStatus.OK);
+    }
+    @Override
+    public void createContacterNous(BaContacterNousDto dto) {
+
+        // Envoi de l'email
+        String subject = "Nouveau message reçu de " + dto.getNomPrenom();
+        String content = String.format(
+                "Nom et prénom : %s\nTéléphone/Email  :%s\nMessage : %s",
+                dto.getNomPrenom(),
+                dto.getEmailOutelephone(),
+                dto.getMessage()
+        );
+
+        mailService.sendEmail(
+                "abdramanbakouan@gmail.com", // Destinataire
+                subject,
+                content,
+                false, // isMultipart
+                false, // isHtml
+                "Administrateur"
+                // pas de pièces jointes ici
+        );
     }
 
 

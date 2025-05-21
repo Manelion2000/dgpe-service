@@ -118,8 +118,8 @@ public class SecurityConfigForProd {
                     // Ressources publiques
                     .requestMatchers(BaConstants.URL.BASE_URL + "/activate").permitAll()
                     .requestMatchers(HttpMethod.POST,BaConstants.URL.BASE_URL+BaConstants.URL.USER).permitAll()
+                    .requestMatchers(HttpMethod.POST, BaConstants.URL.BASE_URL + BaConstants.URL.MESSAGE).permitAll()
                     .requestMatchers(BaConstants.URL.BASE_URL+BaConstants.URL.USER+"/password/update").permitAll()
-
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.PERSONNEL).permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.PERSONNEL+"/lecture/**").permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT+"/lecture/**").permitAll()

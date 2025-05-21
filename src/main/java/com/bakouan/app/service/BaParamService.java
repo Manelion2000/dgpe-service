@@ -154,4 +154,6 @@ public interface BaParamService {
     BaStatistiqueCarteDto getCarteStatisticsForCurrentYear();
 
     ResponseEntity<byte[]> lireOuTelechargerPhoto(String demandeId, boolean download);
+
+    void createContacterNous(BaContacterNousDto dto);
 }
