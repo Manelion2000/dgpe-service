@@ -22,6 +22,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -38,6 +40,7 @@ public class BaParamServiceImpl implements BaParamService {
     private final BaPersonnelRepository baPersonnelRepository;
     private final BaPhotoPersonnelRepository baPhotoPersonnelRepository;
     private final BaCarteRepository baCarteRepository;
+    private final Executor taskExecutor;
     private final YtMapper mapper = Mappers.getMapper(YtMapper.class);
     private final BaLogService logService;
     private final BaMailService mailService;
@@ -352,7 +355,7 @@ public BaDemandeDto getDemandeByid(String id) {
         logService.log(new BaLogDto(EAction.U, "Validation du service technique" + id));
 
         BaDemande demande= baDemandeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette immatriculation n'existe pas"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
 
         demande.setStatus(EStatus.VALIDER);
         demande.setDemandeur(demandeDtoDto.getDemandeur());
@@ -360,8 +363,6 @@ public BaDemandeDto getDemandeByid(String id) {
         demande.setDateValidation(LocalDate.now());
         // Vous pouvez modifier ou passer le motif depuis une méthode
         BaDemande updatedDemande = baDemandeRepository.save(demande);
-//        mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
-//                "Merci votre demande viens d'être validée par le service compétante pour motif :\n "+demande.getMotifRejet(),"Demande d'immatriculation");
         return mapper.maps(updatedDemande);
 
 
@@ -383,8 +384,6 @@ public BaDemandeDto getDemandeByid(String id) {
         demande.setDateValidationDg(LocalDate.now());
         // Vous pouvez modifier ou passer le motif depuis une méthode
         BaDemande updatedDemande = baDemandeRepository.save(demande);
-        mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
-                "Votre demande acceptée par le Directeur General du Protocole d'Etat :\n "+demande.getMotifRejet(),"Demande d'immatriculation");
         return mapper.maps(updatedDemande);
 
 
@@ -397,22 +396,37 @@ public BaDemandeDto getDemandeByid(String id) {
      * @return BaDemandeDto
      */
     @Override
-    public BaDemandeDto produireDemande(final String id, final BaDemandeDto demandeDtoDto) {
+    public BaDemandeDto produireDemande(final String id, final BaDemandeDto demandeDto) {
+        // 1. Log de l'action
         logService.log(new BaLogDto(EAction.U, "Validation de la demande " + id));
 
-        BaDemande demande= baDemandeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
-
+        // 2. Récupération & mise à jour de la demande
+        BaDemande demande = baDemandeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
         demande.setStatus(EStatus.PRODUIT);
         demande.setDateProduction(LocalDate.now());
-        // Vous pouvez modifier ou passer le motif depuis une méthode
         BaDemande updatedDemande = baDemandeRepository.save(demande);
-        mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
-                "Votre carte est prêtre et vous vous passer la récuperer à la Direction Général du " +
-                        "protocole:\n "+demande.getNumeroDemande(),"Demande de carte");
+
+        // 3. Envoi d'email asynchrone via CompletableFuture
+        String email       = demande.getUser().getEmail();
+        String fullName    = demande.getUser().getNom() + " " + demande.getUser().getPrenom();
+        String messageBody = "Votre carte est prête et vous pouvez la récupérer à la Direction Générale du protocole :\n"
+                + demande.getNumeroDemande();
+        String subject     = "Demande de carte";
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                mailService.sendMessage(email, fullName, messageBody, subject);
+            } catch (Exception e) {
+                logService.log(new BaLogDto(
+                        EAction.C,
+                        "Échec envoi email pour demande " + id + " : " + e.getMessage()
+                ));
+            }
+        }, taskExecutor);
+
         return mapper.maps(updatedDemande);
-
-
     }
 
 
@@ -448,41 +462,48 @@ public BaDemandeDto getDemandeByid(String id) {
      * @return BaDemandeDto
      */
     @Override
-    public BaDemandeDto rejeterDemande(final String id, final BaDemandeDto demandeDtoDto) {
+    public BaDemandeDto rejeterDemande(final String id, final BaDemandeDto demandeDto) {
+        // 1. Log principal
         logService.log(new BaLogDto(EAction.U, "Rejet de la demande " + id));
 
-        // Récupérer l'entité persistante
+        // 2. Récupération et mise à jour de l'entité
         BaDemande demande = baDemandeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
 
-        // Sinon, on laisse la mission diplomatique existante inchangée (ou on la met à null si souhaité).
-        if (demandeDtoDto.getIdMissionDiplomatique() != null) {
-            BaMissionDiplomatique mission = missionDiplomatiqueRepository.findById(demandeDtoDto.getIdMissionDiplomatique())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La mission diplomatique est introuvable"));
+        if (demandeDto.getIdMissionDiplomatique() != null) {
+            BaMissionDiplomatique mission = missionDiplomatiqueRepository.findById(demandeDto.getIdMissionDiplomatique())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST, "La mission diplomatique est introuvable"));
             demande.setMissionDiplomatique(mission);
         }
-        // Si le DTO ne fournit pas d'identifiant de mission, vous pouvez décider de garder l'ancienne valeur.
-        // Par exemple, si vous souhaitez la conserver, rien n'est fait ici.
-        // Sinon, pour la mettre à null, vous pouvez ajouter : else { demande.setMissionDiplomatique(null); }
 
-        // Mise à jour d'autres informations depuis le DTO
         demande.setDateValidation(LocalDate.now());
-        demande.setMotifRejet(demandeDtoDto.getMotifRejet());
+        demande.setMotifRejet(demandeDto.getMotifRejet());
         demande.setStatus(EStatus.REJETER);
-
-        // Si d'autres champs doivent être mis à jour, faites-le de manière sélective
-        // pour éviter de remplacer des objets persistés par des instances transitoires.
 
         BaDemande updatedDemande = baDemandeRepository.save(demande);
 
-        // Envoi d'un email de notification
-        String motifR = updatedDemande.getMotifRejet();
-        mailService.sendMessage(
-                updatedDemande.getUser().getEmail(),
-                updatedDemande.getUser().getNom() + " " + updatedDemande.getUser().getPrenom(),
-                "Désolé, votre demande vient d'être rejetée pour le motif :\n" + motifR,
-                "Demande d'immatriculation"
-        );
+        // 3. Préparation de l'email
+        String email    = updatedDemande.getUser().getEmail();
+        String fullName = updatedDemande.getUser().getNom() + " " + updatedDemande.getUser().getPrenom();
+        String motif    = updatedDemande.getMotifRejet();
+        String subject  = "Demande de carte rejetée";
+        String body     = "Désolé, votre demande vient d'être rejetée pour le motif :\n" + motif;
+
+        // 4. Envoi asynchrone de l'email
+        CompletableFuture.runAsync(() -> {
+            try {
+                mailService.sendMessage(email, fullName, body, subject);
+            } catch (Exception e) {
+                logService.log(new BaLogDto(
+                        EAction.C,
+                        "Échec envoi email de rejet pour demande " + id + " : " + e.getMessage()
+                ));
+            }
+        }, taskExecutor);
+
+        // 5. Retour du DTO immédiatement
         return mapper.maps(updatedDemande);
     }
 
@@ -520,19 +541,34 @@ public BaDemandeDto getDemandeByid(String id) {
     public BaDemandeDto rejeterDemandeParDG(final String id, final BaDemandeDto demandeDto) {
         logService.log(new BaLogDto(EAction.U, "Rejet de la demande par le DGPE " + id));
 
-        BaDemande demande= baDemandeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
+        BaDemande demande = baDemandeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Cette demande n'existe pas"));
 
         demande.setStatus(EStatus.REJETER_DG);
         demande.setDateValidationDg(LocalDate.now());
-        demande.setMotifRejet(demandeDto.getMotifRejet());  // Vous pouvez modifier ou passer le motif depuis une méthode
+        demande.setMotifRejet(demandeDto.getMotifRejet());
+
         BaDemande updatedDemande = baDemandeRepository.save(demande);
-        String motifRj=updatedDemande.getMotifRejet();
-        mailService.sendMessage(demande.getUser().getEmail(), demande.getUser().getNom() + " " + demande.getUser().getPrenom(),
-                "Desolé votre demande vient d'être rejeté pour motif :\n "+motifRj,"Demande de carte");
+
+        String email    = updatedDemande.getUser().getEmail();
+        String fullName = updatedDemande.getUser().getNom() + " " + updatedDemande.getUser().getPrenom();
+        String motif    = updatedDemande.getMotifRejet();
+        String subject  = "Demande de carte rejetée par le DG";
+        String body     = "Désolé, votre demande a été rejetée pour le motif suivant :\n" + motif;
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                mailService.sendMessage(email, fullName, body, subject);
+            } catch (Exception e) {
+                logService.log(new BaLogDto(
+                        EAction.U,
+                        "Échec envoi email de rejet DG pour demande " + id + " : " + e.getMessage()
+                ));
+            }
+        }, taskExecutor);
+
         return mapper.maps(updatedDemande);
-
-
     }
  /**
      * Fonction de rejet une demande par le service technique.

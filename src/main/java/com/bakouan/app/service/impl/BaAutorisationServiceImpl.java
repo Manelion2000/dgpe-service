@@ -309,24 +309,18 @@ public class BaAutorisationServiceImpl implements BaAutorisationService {
      */
     @Override
     public BaAutorisationSpecialeDto validateSt(String id) {
-        logService.log(new BaLogDto(EAction.U, "Validation de l'autorisation spéciale par le Service technique ID : " + id));
+        int updated = autorisationRepository.updateEtatById(id, EEtatAutorisation.VALIDE);
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation introuvable pour l'ID : " + id);
+        }
 
-        BaAutorisationSpeciale autorisation = getAutorisationById(id);
-        autorisation.setEtat(EEtatAutorisation.VALIDE);
+        asynchroService.afterValidate(id);
 
-        BaAutorisationSpeciale updated = autorisationRepository.save(autorisation);
+        return BaAutorisationSpecialeDto.builder()
+                .id(id)
+                .etat(EEtatAutorisation.VALIDE)
+                .build();
 
-        String userFullName = updated.getUser().getNom() + " " + updated.getUser().getPrenom();
-        String numeroDemande=updated.getNumDemande();
-
-        mailService.sendMessage(
-                updated.getUser().getEmail(),
-                "A " + userFullName,
-                "Votre demande d'autorisation spéciale de passage "+numeroDemande+", aux salons officiels a été acceptée.",
-                "Demande d'autorisation spéciale"
-        );
-
-        return mapper.maps(updated);
     }
 
 

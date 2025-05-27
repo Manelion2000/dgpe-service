@@ -28,11 +28,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -50,6 +51,7 @@ public class BaUserService {
     private final PasswordEncoder passwordEncoder;
     private final BaLogService logService;
     private final BaMailService mailService;
+    private final Executor taskExecutor;
 
 
     /**
@@ -100,55 +102,68 @@ public class BaUserService {
     public BaUserDto createUser(final BaUserDto uDto) {
         log.info("Création d'un compte utilisateur.");
         logService.log(new BaLogDto(EAction.C, "Utilisateurs : " + uDto.getUsername()));
+
         // Assigner l'email comme nom d'utilisateur
         uDto.setUsername(uDto.getEmail());
 
-        if (this.userRepository.existsByUsernameIgnoreCase(uDto.getUsername())) {
+        // Vérifications d'unicité
+        if (userRepository.existsByUsernameIgnoreCase(uDto.getUsername())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le nom d'utilisateur est déjà occupé.");
         }
-
-        if (this.userRepository.existsByTelephoneIgnoreCase(uDto.getTelephone())) {
+        if (userRepository.existsByTelephoneIgnoreCase(uDto.getTelephone())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le numéro de téléphone est déjà utilisé.");
         }
-
-        if (uDto.getEmail() != null && this.userRepository.existsByEmailIgnoreCase(uDto.getEmail())) {
+        if (uDto.getEmail() != null && userRepository.existsByEmailIgnoreCase(uDto.getEmail())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'email est déjà utilisé.");
         }
 
-//        if (uDto.getCredentials() == null || BaUtils.isEmpty(uDto.getCredentials().getPassword())) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vous devez fournir le mot de passe");
-//        }
-/**
- * Recuperation des profils par défaut
- */
+        // Récupération des profils par défaut
         BaProfil admin = profilRepository.findById("1e")
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Profil par défaut introuvable"));
-
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Profil par défaut introuvable"));
         BaProfil membre = profilRepository.findById("ce9")
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Profil par défaut introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Profil par défaut introuvable"));
 
-        BaUser user = this.mapper.maps(uDto);
+        // Préparation de l'entité
+        BaUser user = mapper.maps(uDto);
         user.setId(BaUtils.randomUUID());
-        String userPassword="1234";
-        user.setPassword(this.passwordEncoder.encode(userPassword));
+        String newPassword = BaVerificateurPassword.generateRandomPassword(8);
+        user.setPassword(passwordEncoder.encode(newPassword));
         user.setResetKey(null);
         user.setResetDate(null);
         user.setActivated(Boolean.TRUE);
 
-        /**
-         * Définir le profil en fonction de `isAdmin`
-         */
-        if (uDto.getIsAdmin() != null && uDto.getIsAdmin()) {
+        // Attribution du profil
+        if (Boolean.TRUE.equals(uDto.getIsAdmin())) {
             user.setProfil(admin);
         } else {
             user.setProfil(membre);
         }
 
-        BaUser save = this.userRepository.save(user);
+        // Sauvegarde synchronisée de l'utilisateur
+        BaUser saved = userRepository.save(user);
 
-        mailService.sendMessage(user.getEmail(), user.getNom() + " " + user.getPrenom(), "Merci " +
-                " pour votre création de compte. Votre mot de passe est : "+userPassword,"username  de connexion"+user.getEmail());
-        return this.mapper.maps(save);
+        // Envoi d'email asynchrone
+        String email     = saved.getEmail();
+        String fullName  = saved.getNom() + " " + saved.getPrenom();
+        String subject   = "Informations de connexion";
+        String message   = "Merci pour votre création de compte. "
+                + "Votre mot de passe temporaire est : " + newPassword;
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                mailService.sendMessage(email, fullName, message, subject);
+            } catch (Exception e) {
+                logService.log(new BaLogDto(
+                        EAction.V,
+                        "Échec envoi email de création pour user " + saved.getId() + " : " + e.getMessage()
+                ));
+            }
+        }, taskExecutor);
+
+        // Retour du DTO
+        return mapper.maps(saved);
     }
 
 
@@ -592,29 +607,47 @@ public class BaUserService {
      * @param passwordDto Pour demande la réinitialisation, je prends en compte
      *                    l'email ou le nom d'utilisateur.
      */
-    public void updatePasswordReset(final BaUpdatePasswordDto passwordDto) {
-        log.info("Demande la réinitialisation de son mot de passe.");
-        final String email = passwordDto.getEmail();
-        Optional<BaUser> optionalUser;
 
-        if (!BaUtils.isEmpty(email)) {
-            optionalUser = this.userRepository.findOneByEmailAndStatut(email, EStatut.A);
-        }
-        else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'email fournie est incorrecte");
-        }
+public void updatePasswordReset(final BaUpdatePasswordDto passwordDto) {
+    log.info("Demande de réinitialisation de mot de passe.");
 
-        final BaUser user = optionalUser.get();
-        String newPassword= BaVerificateurPassword.generateRandomPassword(8);
-        String passeWordEncode=passwordEncoder.encode(newPassword);
-        final String resetKey = BaUtils.numberGenerator(Integer.parseInt("8")).toUpperCase();
-        user.setPassword(passeWordEncode);
-        user.setResetDate(ZonedDateTime.now());
-        user.setActivated(Boolean.TRUE);
-        this.userRepository.save(user);
-        mailService.sendMessage(user.getEmail(), user.getNom() + " " + user.getPrenom(), "Votre mot de passe" +
-                " à été modifié avec succès. Votre nouveau mot de passe est : " + newPassword, "Identifiant  de connexion");
+    final String email = passwordDto.getEmail();
+    if (BaUtils.isEmpty(email)) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'email fourni est incorrect.");
     }
+
+    BaUser user = userRepository.findOneByEmailAndStatut(email, EStatut.A)
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Aucun utilisateur actif ne correspond à cet email"));
+
+    // Génération et encodage du nouveau mot de passe
+    String newPassword = BaVerificateurPassword.generateRandomPassword(8);
+    String encodedPwd  = passwordEncoder.encode(newPassword);
+
+    // Mise à jour de l'utilisateur
+    user.setPassword(encodedPwd);
+    user.setResetDate(ZonedDateTime.now());
+    user.setActivated(Boolean.TRUE);
+    userRepository.save(user);
+
+    // Préparation de l'email
+    String fullName  = user.getNom() + " " + user.getPrenom();
+    String subject   = "Identifiants de connexion";
+    String message   = "Votre mot de passe a été réinitialisé avec succès. Votre nouveau mot de passe est : "
+            + newPassword;
+
+    // Envoi asynchrone de l'email
+    CompletableFuture.runAsync(() -> {
+        try {
+            mailService.sendMessage(email, fullName, message, subject);
+        } catch (Exception e) {
+            logService.log(new BaLogDto(
+                    EAction.C,
+                    "Échec envoi email réinitialisation pour user " + user.getId() + " : " + e.getMessage()
+            ));
+        }
+    }, taskExecutor);
+}
 
     /**
      * Authenticate JWT.

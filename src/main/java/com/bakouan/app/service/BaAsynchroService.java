@@ -45,4 +45,28 @@ public class BaAsynchroService {
         );
     }
 
+    /**
+     * Après validation synchronisée, gérer le log et l'envoi de mail en tâche de fond.
+     */
+    @Async("taskExecutor")
+    public void afterValidate(String id) {
+        logService.log(new BaLogDto(EAction.U, "Validation autorisation ID : " + id));
+
+        BaAutorisationSpeciale autorisation = autorisationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"Autorisation introuvable : " + id));
+
+        String fullName = autorisation.getUser().getNom() + " " + autorisation.getUser().getPrenom();
+        String numeroDemande = autorisation.getNumDemande();
+
+        // 4. Envoi du mail
+        mailService.sendMessage(
+                autorisation.getUser().getEmail(),
+                "À " + fullName,
+                "Votre demande d'autorisation spéciale de passage " + numeroDemande + " a été acceptée.",
+                "Autorisation spéciale"
+        );
+
+        log.info("Tâche asynchrone afterValidate terminée pour ID {}", id);
+    }
+
 }
