@@ -6,10 +6,7 @@ import com.bakouan.app.enums.*;
 import com.bakouan.app.mapper.YtMapper;
 import com.bakouan.app.model.*;
 import com.bakouan.app.repositories.*;
-import com.bakouan.app.service.BaAutorisationService;
-import com.bakouan.app.service.BaFileStorageService;
-import com.bakouan.app.service.BaLogService;
-import com.bakouan.app.service.BaMailService;
+import com.bakouan.app.service.*;
 import com.bakouan.app.utils.BaUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +47,7 @@ public class BaAutorisationServiceImpl implements BaAutorisationService {
     private final BaLogService logService;
     private final BaMailService mailService;
     private final BaFileStorageService baFileStorageService;
+    private final BaAsynchroService asynchroService;
     private final BaUserRepository baUserRepository;
     private final BaMissionDiplomatiqueRepository missionDiplomatiqueRepository;
 
@@ -153,26 +151,14 @@ public class BaAutorisationServiceImpl implements BaAutorisationService {
      */
     @Override
     public void ValiderDemande(String id) {
-        BaAutorisationSpeciale au = autorisationRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation spéciale introuvable."));
+        // 1. Mise à jour rapide en base
+        int updated = autorisationRepository.updateEtatById(id, EEtatAutorisation.EN_ATTENTE);
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation spéciale introuvable.");
+        }
 
-        au.setEtat(EEtatAutorisation.EN_ATTENTE);
-        BaAutorisationSpeciale updated = autorisationRepository.save(au);
-
-        // Log de l'action
-        logService.log(new BaLogDto(EAction.U, "Soumission de la demande ID : " + id + " par l'utilisateur"));
-
-        // Envoi de l'email
-        String userFullName = updated.getUser().getNom() + " " + updated.getUser().getPrenom();
-        String email = updated.getUser().getEmail();
-        String numDemande = updated.getNumDemande();
-
-        mailService.sendMessage(
-                email,
-                "Bonjour " + userFullName,
-                "Votre demande d'autorisation spéciale " + numDemande + " a bien été soumise et est en attente de traitement.",
-                "Confirmation de soumission"
-        );
+        // 2. Délégation asynchrone du log + email
+        asynchroService.apresValideAutorisation(id);
     }
 
 
