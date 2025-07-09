@@ -1,8 +1,11 @@
 package accord.gov.app.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.LocalDate;
 
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
@@ -13,4 +16,18 @@ import lombok.Setter;
  */
 @Getter @Setter @Builder
 public class BaDocumentAffilieDto {
+    private String id;
+
+    @NotBlank(message = "intitulé vide")
+    private String intituleAffilie;
+
+    @NotBlank(message = "le code de la boite es obligatoire")
+    private String codeBoite;
+
+    @NotBlank(message = "le titre du document est obligatoire")
+    private String titre;
+
+    private LocalDate dateSignature;
+
+    private LocalDate dateRatification;
 }

@@ -1,5 +1,6 @@
 package accord.gov.app.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,4 +16,8 @@ import lombok.Setter;
 @Setter
 @Builder
 public class BaLangueDto {
+    private String id;
+
+    @NotBlank(message = "le libelle de la partie est obligatoire")
+    private String libelle;
 }
