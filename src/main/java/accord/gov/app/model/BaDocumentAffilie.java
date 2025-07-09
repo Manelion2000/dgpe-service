@@ -1,14 +1,13 @@
 package accord.gov.app.model;
 
 import accord.gov.app.utils.BaUtils;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDate;
 
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
@@ -27,5 +26,24 @@ public class BaDocumentAffilie extends BaAbstractAuditingEntity{
     @Id
     @Column(name = "id")
     private String id = BaUtils.randomUUID();
+
+    @Column(name = "intitule_affilie")
+    private String intituleAffilie;
+
+    @Column(name = "code_boite")
+    private String codeBoite;
+
+    @Column(name = "titre")
+    private String titre;
+
+    @Column(name = "date_signature")
+    private LocalDate dateSignature;
+
+    @Column(name = "date_ratification")
+    private LocalDate dateRatification;
+
+    @ManyToOne
+    @JoinColumn(name = "document_principal_id")
+    private BaDocument documentPrincipal;
 }
 

@@ -26,4 +26,7 @@ public class BaTypeAccord extends BaAbstractAuditingEntity{
     @Id
     @Column(name = "id")
     private String id = BaUtils.randomUUID();
+
+    @Column(name = "libelle", nullable = false)
+    private String libelle;
 }
