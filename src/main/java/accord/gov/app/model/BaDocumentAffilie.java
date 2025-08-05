@@ -44,6 +44,6 @@ public class BaDocumentAffilie extends BaAbstractAuditingEntity{
 
     @ManyToOne
     @JoinColumn(name = "document_principal_id")
-    private BaDocument documentPrincipal;
+    private BaDocument accord;
 }
 

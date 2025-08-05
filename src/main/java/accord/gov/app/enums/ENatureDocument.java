@@ -8,6 +8,7 @@ package accord.gov.app.enums;
  * @since : 09/07/2025 à 19:25
  */
 public enum ENatureDocument {
-    BILLATERAL,
-    MULTILATERAL;
+    BILATERAL,
+    MULTILATERAL,
+    UNILATERAL;
 }

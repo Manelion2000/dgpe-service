@@ -27,6 +27,13 @@ public interface YtMapper {
     BaProduct maps(BaProductDto dto);
 
     /**
+     * Entity pays en Dto
+     */
+    BaPaysDto maps(BaPays entity);
+    @InheritInverseConfiguration
+    BaPays maps(BaPaysDto dto);
+
+    /**
      * Convertie le document en Dto
      * @param entity: entité
      * @return un dto
@@ -36,6 +43,19 @@ public interface YtMapper {
 
     @InheritInverseConfiguration
     BaDocument maps(BaDocumentDto dto);
+
+    /**
+     * Convertie le fichier en Dto
+     * @param entity: entité
+     * @return un dto
+     */
+    @Mappings({
+            @Mapping(source = "pro.id", target = "idProfil"),
+    })
+    BaFichierDto maps(BaFichier entity);
+
+    @InheritInverseConfiguration
+    BaFichierDto maps(BaFichierDto dto);
 /**
      * Convertie le document affilié en Dto
      * @param entity: entité

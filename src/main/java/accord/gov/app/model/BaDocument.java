@@ -77,10 +77,6 @@ public class BaDocument extends BaAbstractAuditingEntity {
     private ENatureDocument natureDocument;
 
     @ManyToOne
-    @JoinColumn(name = "langue_id")
-    private BaLangue langue;
-
-    @ManyToOne
     @JoinColumn(name = "type_document_id")
     private BaTypeAccord typeDocument;
 
@@ -92,7 +88,11 @@ public class BaDocument extends BaAbstractAuditingEntity {
     )
     private List<BaPartie> partiesPrenantes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "documentPrincipal", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "accord", cascade = CascadeType.ALL)
+    private List<BaFichier> fichiers = new ArrayList<>();
+
+
+    @OneToMany(mappedBy = "accord", cascade = CascadeType.ALL)
     private List<BaDocumentAffilie> documentsAffilies = new ArrayList<>();
 }
 
