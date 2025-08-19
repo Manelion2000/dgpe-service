@@ -70,7 +70,7 @@ public class BaAutorisationController {
      */
     @PatchMapping(BaConstants.URL.AUTORISATION + "/soumettre/{id}")
     public ResponseEntity<String> validerSoumissionDemande(@PathVariable String id) {
-        autorisationService.ValiderDemande(id);
+        autorisationService.SoumettreDemande(id);
         return ResponseEntity.ok("La demande a été soumise avec succès et est en attente de traitement.");
     }
 

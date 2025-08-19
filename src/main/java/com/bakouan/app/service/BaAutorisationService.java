@@ -13,7 +13,7 @@ public interface BaAutorisationService {
 
     BaAutorisationSpecialeDto create(final BaAutorisationSpecialeDto autorisationSpecialeDto, MultipartFile noteVervale);
 
-    void ValiderDemande(String id);
+    void SoumettreDemande(String id);
 
     BaAutorisationSpecialeDto uploadNoteVerbale(String autorisationId, MultipartFile noteVerbale);
 

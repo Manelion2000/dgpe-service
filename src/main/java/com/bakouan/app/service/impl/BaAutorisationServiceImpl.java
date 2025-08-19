@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.time.Year;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -150,16 +151,39 @@ public class BaAutorisationServiceImpl implements BaAutorisationService {
      * @param id: Identifiant de la demande
      */
     @Override
-    public void ValiderDemande(String id) {
+    public void SoumettreDemande(String id) {
         // 1. Mise à jour rapide en base
         int updated = autorisationRepository.updateEtatById(id, EEtatAutorisation.EN_ATTENTE);
         if (updated == 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation spéciale introuvable.");
         }
 
-        // 2. Délégation asynchrone du log + email
-        asynchroService.apresValideAutorisation(id);
+        // 2. Récupération de l'autorisation mise à jour
+        BaAutorisationSpeciale autorisation = autorisationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation introuvable : " + id));
+
+        // 3. Log synchronisé
+        logService.log(new BaLogDto(EAction.U, "Soumission d'une autorisation ID : " + id));
+
+        // 4. Envoi du mail en tâche de fond
+        String fullName = autorisation.getUser().getNom() + " " + autorisation.getUser().getPrenom();
+        String email = autorisation.getUser().getEmail();
+        String numeroDemande = autorisation.getNumDemande();
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                mailService.sendMessage(
+                        email,
+                        "Bonjour " + fullName,
+                        "Votre demande d'autorisation spéciale " + numeroDemande + " a bien été soumise et est en attente de traitement.",
+                        "Confirmation de soumission"
+                );
+            } catch (Exception e) {
+                log.error("Erreur lors de l'envoi de l'email de confirmation : ", e);
+            }
+        });
     }
+
 
 
 
@@ -309,19 +333,43 @@ public class BaAutorisationServiceImpl implements BaAutorisationService {
      */
     @Override
     public BaAutorisationSpecialeDto validateSt(String id) {
+        // 1. Mise à jour du statut
         int updated = autorisationRepository.updateEtatById(id, EEtatAutorisation.VALIDE);
         if (updated == 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation introuvable pour l'ID : " + id);
         }
 
-        asynchroService.afterValidate(id);
+        // 2. Récupération de l'autorisation mise à jour
+        BaAutorisationSpeciale autorisation = autorisationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Autorisation introuvable : " + id));
 
+        // 3. Log de l'action
+        logService.log(new BaLogDto(EAction.U, "Validation autorisation ID : " + id));
+
+        // 4. Envoi d'un mail asynchrone
+        String userFullName = autorisation.getUser().getNom() + " " + autorisation.getUser().getPrenom();
+        String email = autorisation.getUser().getEmail();
+        String numDemande = autorisation.getNumDemande();
+        CompletableFuture.runAsync(() -> {
+            try {
+                mailService.sendMessage(
+                        email,
+                        "Bonjour " + userFullName,
+                        "Votre demande d'autorisation spéciale de passage " + numDemande + " a été acceptée.",
+                        "Autorisation spéciale"
+                );
+            } catch (Exception e) {
+                log.error("Erreur lors de l'envoi de l'email d'autorisation : ", e);
+            }
+        });
+
+        // 5. Retour du DTO
         return BaAutorisationSpecialeDto.builder()
                 .id(id)
                 .etat(EEtatAutorisation.VALIDE)
                 .build();
-
     }
+
 
 
     /**
@@ -332,27 +380,39 @@ public class BaAutorisationServiceImpl implements BaAutorisationService {
      */
     @Override
     public BaAutorisationSpecialeDto rejectSt(String id, BaAutorisationSpecialeDto autDto) {
+        // 1. Log du rejet
         logService.log(new BaLogDto(EAction.U, "Rejet de l'autorisation spéciale par le Service technique ID : " + id));
 
+        // 2. Récupération et mise à jour de l'autorisation
         BaAutorisationSpeciale autorisation = getAutorisationById(id);
-
         autorisation.setEtat(EEtatAutorisation.REJETE);
         autorisation.setMotifRejet(autDto.getMotifRejet());
 
         BaAutorisationSpeciale updated = autorisationRepository.save(autorisation);
 
+        // 3. Préparation des données pour l'email
         String motifRj = updated.getMotifRejet();
-        String fullName = autorisation.getUser().getNom() + " " + autorisation.getUser().getPrenom();
+        String fullName = updated.getUser().getNom() + " " + updated.getUser().getPrenom();
+        String email = updated.getUser().getEmail();
 
-        mailService.sendMessage(
-                autorisation.getUser().getEmail(),
-                "A " + fullName,
-                "Désolé, votre demande vient d'être rejetée pour le motif suivant :\n" + motifRj,
-                "Demande d'autorisation spéciale"
-        );
+        // 4. Envoi du mail de manière asynchrone
+        CompletableFuture.runAsync(() -> {
+            try {
+                mailService.sendMessage(
+                        email,
+                        "À " + fullName,
+                        "Désolé, votre demande d'autorisation spéciale vient d'être rejetée pour le motif suivant :\n" + motifRj,
+                        "Demande d'autorisation spéciale"
+                );
+            } catch (Exception e) {
+                log.error("Erreur lors de l'envoi de l'email de rejet pour l'autorisation ID : {}", id, e);
+            }
+        });
 
+        // 5. Retour du DTO
         return mapper.maps(updated);
     }
+
 
 
     /**
