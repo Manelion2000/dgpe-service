@@ -11,7 +11,9 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
@@ -66,9 +68,6 @@ public class BaDocument extends BaAbstractAuditingEntity {
     @Column(name = "date_ratification")
     private LocalDate dateRatification;
 
-    @Column(name = "chemin_fichier")
-    private String cheminFichier;
-
     @Column(name = "lieu_signature")
     private String lieuSignature;
 
@@ -77,8 +76,24 @@ public class BaDocument extends BaAbstractAuditingEntity {
     private ENatureDocument natureDocument;
 
     @ManyToOne
-    @JoinColumn(name = "type_document_id")
+    @JoinColumn(name = "type_document_id", nullable = false)
     private BaTypeAccord typeDocument;
+
+    @ManyToMany
+    @JoinTable(
+            name = "ba_document_langue",
+            joinColumns = @JoinColumn(name = "document_id"),
+            inverseJoinColumns = @JoinColumn(name = "langue_id")
+    )
+    private List<BaLangue> langues = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "ba_document_domaine",
+            joinColumns = @JoinColumn(name = "document_id"),
+            inverseJoinColumns = @JoinColumn(name = "domaine_id")
+    )
+    private Set<BaDomaine> domaines = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
@@ -86,13 +101,13 @@ public class BaDocument extends BaAbstractAuditingEntity {
             joinColumns = @JoinColumn(name = "document_id"),
             inverseJoinColumns = @JoinColumn(name = "partie_id")
     )
-    private List<BaPartie> partiesPrenantes = new ArrayList<>();
+    private Set<BaPartie> parties = new HashSet<>();
 
     @OneToMany(mappedBy = "accord", cascade = CascadeType.ALL)
-    private List<BaFichier> fichiers = new ArrayList<>();
+    private Set<BaFichier> fichiers = new HashSet<>();
 
 
     @OneToMany(mappedBy = "accord", cascade = CascadeType.ALL)
-    private List<BaDocumentAffilie> documentsAffilies = new ArrayList<>();
+    private Set<BaDocumentAffilie> documentsAffilies = new HashSet<>();
 }
 

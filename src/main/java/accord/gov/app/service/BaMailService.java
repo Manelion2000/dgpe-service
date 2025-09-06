@@ -45,7 +45,7 @@ public class BaMailService {
     @Value(value = "${spring.mail.username}")
     private String emailFrom;
 
-    private static final String SENDER_NAME = "Categorie-App";
+    private static final String SENDER_NAME = "Accord-App";
 
     /**
      * Envois de mail.

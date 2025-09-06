@@ -2,6 +2,8 @@ package accord.gov.app.dto;
 
 import accord.gov.app.enums.EConfidentiel;
 import accord.gov.app.enums.ENatureDocument;
+import accord.gov.app.model.BaDomaine;
+import accord.gov.app.model.BaLangue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -12,6 +14,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
@@ -59,12 +62,16 @@ public class BaDocumentDto {
     @NotNull(message = "La nature du document est obligatoire.")
     private ENatureDocument natureDocument;
 
-    @NotBlank(message = "L'identifiant de la langue est obligatoire.")
-    private String langueId;
 
     @NotBlank(message = "L'identifiant du type de document est obligatoire.")
     private String typeDocumentId;
 
     @NotEmpty(message = "Au moins une partie prenante doit être sélectionnée.")
-    private List<@NotBlank(message = "L'identifiant de la partie prenante ne peut pas être vide.") String> partiesPrenantesIds;
+    private Set<BaPartieDto> parties;
+
+    @NotEmpty(message = "Au moins un domaine doit être sélectionnée.")
+    private Set< BaDomaineDto> domaines;
+
+    @NotEmpty(message = "Au moins une langue prenante doit être sélectionnée.")
+    private Set<BaLangueDto> langues;
 }

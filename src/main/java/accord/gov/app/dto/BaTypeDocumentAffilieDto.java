@@ -1,20 +1,17 @@
 package accord.gov.app.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
  * @version : 1.0
  * Copyright (c) 2025 All rights reserved.
  * @Project : traiteAccordService
- * @since : 14/07/2025 à 13:08
+ * @since : 06/09/2025 à 02:22
  */
-@Getter @Setter
-public class BaFichierDto {
+public class BaTypeDocumentAffilieDto {
     private String id;
-    private String libelle;
-    private String url;
-    private String documentId;
 
+    @NotBlank(message = "le libelle de la partie est obligatoire")
+    private String libelle;
 }

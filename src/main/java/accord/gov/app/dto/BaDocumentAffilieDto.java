@@ -30,4 +30,9 @@ public class BaDocumentAffilieDto {
     private LocalDate dateSignature;
 
     private LocalDate dateRatification;
+
+    private String documentId;
+
+    @NotBlank(message = "le type de document affilé doit être precisé")
+    private String typeDocumentAffilieId;
 }

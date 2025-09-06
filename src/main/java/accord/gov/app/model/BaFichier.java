@@ -26,10 +26,6 @@ public class BaFichier extends BaAbstractAuditingEntity {
     private String url;
 
     @ManyToOne
-    @JoinColumn(name = "langue_id")
-    private BaLangue langue;
-
-    @ManyToOne
     @JoinColumn(name = "document_principal_id")
     private BaDocument accord;
 }

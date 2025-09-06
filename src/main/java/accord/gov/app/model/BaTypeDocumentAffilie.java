@@ -1,10 +1,9 @@
 package accord.gov.app.model;
+
 import accord.gov.app.utils.BaUtils;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,15 +13,9 @@ import java.util.List;
  * @version : 1.0
  * Copyright (c) 2025 All rights reserved.
  * @Project : traiteAccordService
- * @since : 07/07/2025 à 18:55
+ * @since : 06/09/2025 à 02:19
  */
-@Entity
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
-@Table(name = "ba_type_accord")
-public class BaTypeAccord extends BaAbstractAuditingEntity{
+public class BaTypeDocumentAffilie extends BaAbstractAuditingEntity{
     @Id
     @Column(name = "id")
     private String id = BaUtils.randomUUID();
@@ -30,6 +23,7 @@ public class BaTypeAccord extends BaAbstractAuditingEntity{
     @Column(name = "libelle", nullable = false)
     private String libelle;
 
-    @OneToMany(mappedBy = "typeDocument")
-    private List<BaDocument> documents = new ArrayList<>();
+    @OneToMany(mappedBy = "typeDocumentAffilie")
+    private List<BaDocumentAffilie> documentAffilies = new ArrayList<>();
+
 }

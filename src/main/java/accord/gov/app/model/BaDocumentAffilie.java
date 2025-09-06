@@ -42,8 +42,18 @@ public class BaDocumentAffilie extends BaAbstractAuditingEntity{
     @Column(name = "date_ratification")
     private LocalDate dateRatification;
 
+    @Column(name = "libelle_fichier", unique = true)
+    private String libelleFichier;
+
+    @Column(name = "url")
+    private String url;
+
     @ManyToOne
     @JoinColumn(name = "document_principal_id")
     private BaDocument accord;
+
+    @ManyToOne
+    @JoinColumn(name="type_affilie_id",nullable = false)
+    private BaTypeDocumentAffilie affilie;
 }
 

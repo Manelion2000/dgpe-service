@@ -17,14 +17,6 @@ import org.mapstruct.ReportingPolicy;
         unmappedTargetPolicy = ReportingPolicy.IGNORE,
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_NULL)
 public interface YtMapper {
-    @Mappings({
-            @Mapping(target = "idCategorie", source = "categorie.id"),
-            @Mapping(target = "nomCategorie", source = "categorie.nom"),
-    })
-    BaProductDto maps(BaProduct entity);
-
-    @InheritInverseConfiguration
-    BaProduct maps(BaProductDto dto);
 
     /**
      * Entity pays en Dto
@@ -38,7 +30,12 @@ public interface YtMapper {
      * @param entity: entité
      * @return un dto
      */
-    @Mappings({})
+    @Mappings({
+            @Mapping(source = "domaines", target = "domaines"),
+            @Mapping(source = "langues", target = "langues"),
+            @Mapping(source = "parties", target = "partie"),
+            @Mapping(source = "typeDocument.id",target ="typeDocumentId")
+    })
     BaDocumentDto maps(BaDocument entity);
 
     @InheritInverseConfiguration
@@ -50,7 +47,7 @@ public interface YtMapper {
      * @return un dto
      */
     @Mappings({
-            @Mapping(source = "pro.id", target = "idProfil"),
+            @Mapping(source = "accord.id", target = "documentId")
     })
     BaFichierDto maps(BaFichier entity);
 
@@ -61,7 +58,10 @@ public interface YtMapper {
      * @param entity: entité
      * @return un dto
      */
-    @Mappings({})
+    @Mappings({
+            @Mapping(source = "affilie.id", target = "typeDocumentAffilieId"),
+            @Mapping(source = "accord.id", target = "documentId")
+    })
     BaDocumentAffilieDto maps(BaDocumentAffilie entity);
 
     @InheritInverseConfiguration
@@ -110,6 +110,16 @@ public interface YtMapper {
 
     @InheritInverseConfiguration
     BaTypeAccord maps(BaTypeAccordDto dto);
+    /**
+     * Convertie un type  en Dto
+     * @param entity: entité
+     * @return un dto
+     */
+    @Mappings({})
+    BaTypeDocumentAffilieDto maps(BaTypeDocumentAffilie entity);
+
+    @InheritInverseConfiguration
+    BaTypeAccord maps(BaTypeDocumentAffilieDto dto);
 
     /**
      * Mapping des log
@@ -124,11 +134,6 @@ public interface YtMapper {
     @InheritInverseConfiguration
     BaLog maps(BaLogDto dto);
 
-    @Mappings({})
-    BaCategorieDto maps(BaCategorie entity);
-
-    @InheritInverseConfiguration
-    BaCategorie maps(BaCategorieDto dto);
 
     /**
      * Convertir une entité user en DTO.

@@ -1,10 +1,8 @@
 package accord.gov.app.model;
 
+import accord.gov.app.enums.ETypePartie;
 import accord.gov.app.utils.BaUtils;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,4 +28,8 @@ public class BaPartie extends BaAbstractAuditingEntity{
 
     @Column(name = "libelle", nullable = false)
     private String libelle;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "type_partie")
+    private ETypePartie typePartie;
 }

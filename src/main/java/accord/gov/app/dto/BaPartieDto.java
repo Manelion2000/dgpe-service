@@ -1,6 +1,8 @@
 package accord.gov.app.dto;
 
+import accord.gov.app.enums.ETypePartie;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,4 +22,6 @@ public class BaPartieDto {
 
     @NotBlank(message = "le libelle de la partie est obligatoire")
     private String libelle;
+    @NotNull(message = "Au moins une partie est obligatoire")
+    private ETypePartie typePartie;
 }
