@@ -48,7 +48,6 @@ public interface YtMapper {
     @InheritInverseConfiguration
     BaPersonnelDgpe maps(BaPersonneDgpeDto dto);
 
-
     /**
      * Convertir une entité Document en DTO.
      *
