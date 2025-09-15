@@ -47,7 +47,7 @@ public class BaParamServiceImpl implements BaParamService {
         BaTypeAccord entity = mapper.maps(dto);
         entity.setId(BaUtils.randomUUID());
         entity = typeAccordRepository.save(entity);
-        logService.log(new BaLogDto(EAction.C, "Création du type d’accord : " + dto.getLibelle()));
+        logService.log(new BaLogDto(EAction.CREATE, "Création du type d’accord : " + dto.getLibelle()));
 
         return mapper.maps(entity);
     }
@@ -63,7 +63,7 @@ public class BaParamServiceImpl implements BaParamService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"TypeAccord introuvable"));
 
         logService.log(new BaLogDto(
-                EAction.V, "Consultation du type d’accord ID: " + id));
+                EAction.UPDATE, "Consultation du type d’accord ID: " + id));
 
         return mapper.maps(entity);
     }
@@ -74,7 +74,7 @@ public class BaParamServiceImpl implements BaParamService {
     @Override
     public List<BaTypeAccordDto> getAlTypeAccord() {
         List<BaTypeAccord> accords = typeAccordRepository.findAll();
-        logService.log(new BaLogDto(EAction.V, "Consultation de la liste des types d’accords"));
+        logService.log(new BaLogDto(EAction.VIEW, "Consultation de la liste des types d’accords"));
         return accords.stream()
                 .map(mapper::maps)
                 .collect(Collectors.toList());
@@ -95,7 +95,7 @@ public class BaParamServiceImpl implements BaParamService {
         entity.setLibelle(dto.getLibelle());
         entity = typeAccordRepository.save(entity);
 
-        logService.log(new BaLogDto(EAction.U, "Mise à jour du type d’accord ID: " + id));
+        logService.log(new BaLogDto(EAction.UPDATE, "Mise à jour du type d’accord ID: " + id));
 
         return mapper.maps(entity);
     }
@@ -109,7 +109,7 @@ public class BaParamServiceImpl implements BaParamService {
                 .orElseThrow(()->new ResponseStatusException(HttpStatus.BAD_REQUEST,"le type d'accord n'existe pas"));
         type.setStatut(EStatut.D);
         typeAccordRepository.save(type);
-        logService.log(new BaLogDto(EAction.D, "Suppression du type d’accord ID: " + id));
+        logService.log(new BaLogDto(EAction.DELETE, "Suppression du type d’accord ID: " + id));
     }
 
     // ===================== TYPE DOCUMENT AFFILIE =====================
@@ -125,7 +125,7 @@ public class BaParamServiceImpl implements BaParamService {
         entity.setId(BaUtils.randomUUID());
         entity = typeDocumentAffilieRepository.save(entity);
 
-        logService.log(new BaLogDto(EAction.C, "Création : " + dto.getLibelle()));
+        logService.log(new BaLogDto(EAction.CREATE, "Création : " + dto.getLibelle()));
         return mapper.maps(entity);
     }
 
@@ -139,7 +139,7 @@ public class BaParamServiceImpl implements BaParamService {
     public BaTypeDocumentAffilieDto getTypeDocumentAffilieById(final String id) {
         BaTypeDocumentAffilie entity = typeDocumentAffilieRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("TypeDocumentAffilie introuvable"));
-        logService.log(new BaLogDto(EAction.V, "Consultation ID: " + id));
+        logService.log(new BaLogDto(EAction.VIEW, "Consultation ID: " + id));
         return mapper.maps(entity);
     }
 
@@ -153,7 +153,7 @@ public class BaParamServiceImpl implements BaParamService {
     public BaTypeDocumentAffilieDto getTypeAccordByLibelle(final String libelle) {
         BaTypeDocumentAffilie entity = typeDocumentAffilieRepository.findByLibelle(libelle)
                 .orElseThrow(() -> new RuntimeException("TypeDocumentAffilie introuvable"));
-        logService.log(new BaLogDto(EAction.V,  "Consultation Libelle: " + libelle));
+        logService.log(new BaLogDto(EAction.VIEW,  "Consultation Libelle: " + libelle));
         return mapper.maps(entity);
     }
 
@@ -166,7 +166,7 @@ public class BaParamServiceImpl implements BaParamService {
     @Override
     public List<BaTypeDocumentAffilieDto> getAllTypeDocumentAffilie() {
         List<BaTypeDocumentAffilie> docs = typeDocumentAffilieRepository.findAll();
-        logService.log(new BaLogDto(EAction.V, "Consultation liste des type de documents affiliés"));
+        logService.log(new BaLogDto(EAction.VIEW, "Consultation liste des type de documents affiliés"));
         return docs.stream().map(mapper::maps).toList();
     }
 
@@ -177,7 +177,7 @@ public class BaParamServiceImpl implements BaParamService {
         entity.setLibelle(dto.getLibelle());
         entity = typeDocumentAffilieRepository.save(entity);
 
-        logService.log(new BaLogDto(EAction.U, "Mise à jour du type de document ayant ID: " + id));
+        logService.log(new BaLogDto(EAction.UPDATE, "Mise à jour du type de document ayant ID: " + id));
         return mapper.maps(entity);
     }
     /**
@@ -191,7 +191,7 @@ public class BaParamServiceImpl implements BaParamService {
                 .orElseThrow(()->new  ResponseStatusException(HttpStatus.BAD_REQUEST,"le type de document introuvable"));
         entity.setStatut(EStatut.D);
         typeDocumentAffilieRepository.save(entity);
-        logService.log(new BaLogDto(EAction.D, "Suppression ID: " + id));
+        logService.log(new BaLogDto(EAction.DELETE, "Suppression ID: " + id));
     }
 
 
@@ -209,7 +209,7 @@ public class BaParamServiceImpl implements BaParamService {
             entity.setId(BaUtils.randomUUID());
             entity = langueRepository.save(entity);
 
-            logService.log(new BaLogDto(EAction.C, "Création  d'une nouvelle langue: " + dto.getLibelle()));
+            logService.log(new BaLogDto(EAction.CREATE, "Création  d'une nouvelle langue: " + dto.getLibelle()));
             return mapper.maps(entity);
         }
 
@@ -222,7 +222,7 @@ public class BaParamServiceImpl implements BaParamService {
     @Override
     public List<BaLangueDto> getAllLangue() {
         List<BaLangue> langues = langueRepository.findAll();
-        logService.log(new BaLogDto(EAction.V, "Consultation liste des langues"));
+        logService.log(new BaLogDto(EAction.VIEW, "Consultation liste des langues"));
         return langues.stream().map(mapper::maps).toList();
     }
 
@@ -237,7 +237,7 @@ public class BaParamServiceImpl implements BaParamService {
         BaLangue entity = langueRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"Langue introuvable avec ID: " + id));
 
-        logService.log(new BaLogDto(EAction.V,  "Consultation ID: " + id));
+        logService.log(new BaLogDto(EAction.VIEW,  "Consultation ID: " + id));
         return mapper.maps(entity);
     }
 
@@ -256,7 +256,7 @@ public class BaParamServiceImpl implements BaParamService {
             entity.setLibelle(dto.getLibelle());
             entity = langueRepository.save(entity);
 
-            logService.log(new BaLogDto(EAction.U, "Mise à jour ID: " + id));
+            logService.log(new BaLogDto(EAction.UPDATE, "Mise à jour ID: " + id));
             return mapper.maps(entity);
         }
 
@@ -270,7 +270,7 @@ public class BaParamServiceImpl implements BaParamService {
                     .orElseThrow(()->new ResponseStatusException(HttpStatus.BAD_REQUEST,"la langue introuvable"));
             entity.setStatut(EStatut.D);
             langueRepository.save(entity);
-            logService.log(new BaLogDto(EAction.D,  "Suppression ID: " + id));
+            logService.log(new BaLogDto(EAction.DELETE,  "Suppression ID: " + id));
         }
 
         // ===================== DOMAINE =====================
@@ -287,7 +287,7 @@ public class BaParamServiceImpl implements BaParamService {
             entity.setId(BaUtils.randomUUID());
             entity = domaineRepository.save(entity);
 
-            logService.log(new BaLogDto(EAction.C, "Création d'un nouveau domaine : " + dto.getLibelle()));
+            logService.log(new BaLogDto(EAction.CREATE, "Création d'un nouveau domaine : " + dto.getLibelle()));
             return mapper.maps(entity);
         }
 
@@ -302,7 +302,7 @@ public class BaParamServiceImpl implements BaParamService {
             BaDomaine entity = domaineRepository.findById(id)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"Domaine introuvable avec ID: " + id));
 
-            logService.log(new BaLogDto(EAction.V,  "Consultation ID: " + id));
+            logService.log(new BaLogDto(EAction.VIEW,  "Consultation ID: " + id));
             return mapper.maps(entity);
         }
 
@@ -315,7 +315,7 @@ public class BaParamServiceImpl implements BaParamService {
         public List<BaDomaineDto> getAllDomaine() {
             List<BaDomaine> domaines = domaineRepository.findAll();
 
-            logService.log(new BaLogDto(EAction.V, "Consultation liste de tous les domaines"));
+            logService.log(new BaLogDto(EAction.VIEW, "Consultation liste de tous les domaines"));
             return domaines.stream().map(mapper::maps).collect(Collectors.toList());
         }
 
@@ -334,7 +334,7 @@ public class BaParamServiceImpl implements BaParamService {
             entity.setLibelle(dto.getLibelle());
             entity = domaineRepository.save(entity);
 
-            logService.log(new BaLogDto(EAction.U, "Mise à jour d'un domaine avec ID: " + id));
+            logService.log(new BaLogDto(EAction.UPDATE, "Mise à jour d'un domaine avec ID: " + id));
             return mapper.maps(entity);
         }
 
@@ -349,7 +349,7 @@ public class BaParamServiceImpl implements BaParamService {
                     .orElseThrow(()->new ResponseStatusException(HttpStatus.BAD_REQUEST,"domaine introuvbale"));
             entity.setStatut(EStatut.D);
             domaineRepository.save(entity);
-            logService.log(new BaLogDto(EAction.D,  "Suppression  avec libelle: " +id));
+            logService.log(new BaLogDto(EAction.DELETE,  "Suppression  avec libelle: " +id));
         }
     // ===================== PARTIE PRENANTES =====================
 
@@ -365,7 +365,7 @@ public class BaParamServiceImpl implements BaParamService {
         entity.setId(BaUtils.randomUUID());
         entity = partieRepository.save(entity);
 
-        logService.log(new BaLogDto(EAction.C, "Création d'un nouveau partie : " + dto.getLibelle()));
+        logService.log(new BaLogDto(EAction.CREATE, "Création d'un nouveau partie : " + dto.getLibelle()));
         return mapper.maps(entity);
     }
     /**
@@ -380,7 +380,7 @@ public class BaParamServiceImpl implements BaParamService {
         BaPartie partie = partieRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"Partie introuvable avec l'id : " + id));
 
-        logService.log(new BaLogDto(EAction.V, "Consultation d'une partie avec ID : " + id));
+        logService.log(new BaLogDto(EAction.VIEW, "Consultation d'une partie avec ID : " + id));
 
         return mapper.maps(partie);
     }
@@ -392,7 +392,7 @@ public class BaParamServiceImpl implements BaParamService {
      */
     @Override
     public List<BaPartieDto> getAllPartie() {
-        logService.log(new BaLogDto(EAction.V, "Consultation de toutes les parties"));
+        logService.log(new BaLogDto(EAction.VIEW, "Consultation de toutes les parties"));
 
         return partieRepository.findAll()
                 .stream()
@@ -419,7 +419,7 @@ public class BaParamServiceImpl implements BaParamService {
 
         BaPartie updated = partieRepository.save(partie);
 
-        logService.log(new BaLogDto(EAction.U, " Mise à jour d'une parti avec ID : " + id + ", Nouveau libellé : " + dto.getLibelle()));
+        logService.log(new BaLogDto(EAction.UPDATE, " Mise à jour d'une parti avec ID : " + id + ", Nouveau libellé : " + dto.getLibelle()));
 
         return mapper.maps(updated);
     }
@@ -438,7 +438,7 @@ public class BaParamServiceImpl implements BaParamService {
         partie.setStatut(EStatut.D);
         partieRepository.save(partie);
 
-        logService.log(new BaLogDto(EAction.D,  " avec  d'une partieID : " + id + ", Libellé : " + dto.getLibelle()));
+        logService.log(new BaLogDto(EAction.DELETE,  " avec  d'une partieID : " + id + ", Libellé : " + dto.getLibelle()));
     }
 
     /**
@@ -454,7 +454,7 @@ public class BaParamServiceImpl implements BaParamService {
         BaPartie partie = partieRepository.findByLibelle(libelle)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"Partie introuvable avec le libellé : " + libelle));
 
-        logService.log(new BaLogDto(EAction.V,  "Consultation  d'une partie  avec Libellé : " + libelle));
+        logService.log(new BaLogDto(EAction.VIEW,  "Consultation  d'une partie  avec Libellé : " + libelle));
 
         return mapper.maps(partie);
     }
@@ -469,7 +469,7 @@ public class BaParamServiceImpl implements BaParamService {
     public BaDocumentDto createDocument(BaDocumentDto dto) {
         BaDocument entity = mapper.maps(dto);
         documentRepository.save(entity);
-        logService.log(new BaLogDto(EAction.C, "Création du document : " + dto.getIntitule()));
+        logService.log(new BaLogDto(EAction.CREATE, "Création du document : " + dto.getIntitule()));
         return mapper.maps(entity);
     }
 /**
@@ -495,7 +495,7 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
     entity.setLieuSignature(dto.getLieuSignature());
     entity.setNatureDocument(dto.getNatureDocument());
     documentRepository.save(entity);
-    logService.log(new BaLogDto(EAction.U, "Mise à jour du document ID: " + id));
+    logService.log(new BaLogDto(EAction.UPDATE, "Mise à jour du document ID: " + id));
     return mapper.maps(entity);
 }
     /**
@@ -511,21 +511,21 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Document introuvable"));
         entity.setStatut(EStatut.D);
         documentRepository.save(entity);
-        logService.log(new BaLogDto(EAction.D, "Suppression du document ID: " + id));
+        logService.log(new BaLogDto(EAction.DELETE, "Suppression du document ID: " + id));
     }
 
     @Override
     public BaDocumentDto getById(String id) {
         BaDocument entity = documentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Document introuvable"));
-        logService.log(new BaLogDto(EAction.V, "Consultation du document ID: " + id));
+        logService.log(new BaLogDto(EAction.VIEW, "Consultation du document ID: " + id));
         return mapper.maps(entity);
     }
 
     @Override
     public List<BaDocumentDto> getAllDocument() {
         List<BaDocument> list = documentRepository.findAll();
-        logService.log(new BaLogDto(EAction.V, "Consultation de la liste des documents"));
+        logService.log(new BaLogDto(EAction.VIEW, "Consultation de la liste des documents"));
         return list.stream().map(mapper::maps).collect(Collectors.toList());
     }
 }

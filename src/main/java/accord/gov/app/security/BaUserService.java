@@ -55,7 +55,7 @@ public class BaUserService {
      * @return liste des utilisateurs.
      */
     public List<BaUserDto> fetchUtilisateurs() {
-        logService.log(new BaLogDto(EAction.V, "Utilisateurs"));
+        logService.log(new BaLogDto(EAction.VIEW, "Utilisateurs"));
 
         return this.userRepository.fetchMulticrites(
                         EStatut.A.name(), "", "", "")
@@ -72,7 +72,7 @@ public class BaUserService {
      */
     public BaUserDto createUser(final BaUserDto uDto) {
         log.info("Création d'un compte utilisateur.");
-        logService.log(new BaLogDto(EAction.C, "Utilisateurs : " + uDto.getUsername()));
+        logService.log(new BaLogDto(EAction.CREATE, "Utilisateurs : " + uDto.getUsername()));
         // Assigner l'email comme nom d'utilisateur
         uDto.setUsername(uDto.getEmail());
 
@@ -117,7 +117,7 @@ public class BaUserService {
      */
     public void updateUser(final String id, final BaUserDto uDto) {
         log.info("Met à jour les informations d'un compte.");
-        logService.log(new BaLogDto(EAction.U, "Utilisateurs : " + uDto.getUsername()));
+        logService.log(new BaLogDto(EAction.UPDATE, "Utilisateurs : " + uDto.getUsername()));
 
         if (id == null || !this.userRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'utilisateur est introuvable");
@@ -154,7 +154,7 @@ public class BaUserService {
      * @param id identifiant de l'utilisateur
      */
     public void doDeleteUser(final String id) {
-        logService.log(new BaLogDto(EAction.D, "Utilisateurs : " + id));
+        logService.log(new BaLogDto(EAction.DELETE, "Utilisateurs : " + id));
 
         log.info("Supprime un compte utilisateur. " + id);
         // À partir de là, on est sur de l'existence de l'élément,
@@ -174,7 +174,7 @@ public class BaUserService {
      */
     public void changePassword(final BaUpdatePasswordDto pwDto) {
         log.info("Changement d'identifiant de connexion.");
-        logService.log(new BaLogDto(EAction.U, "Reinitialise le mot de passe"));
+        logService.log(new BaLogDto(EAction.UPDATE, "Reinitialise le mot de passe"));
 
         // À partir de là, on est sur de l'existence de l'élément,
         // donc inutile d'utiliser un optional, encore.
@@ -226,7 +226,7 @@ public class BaUserService {
      */
     public List<BaRoleDto> fetchRoles() {
         log.info("Recupère la liste des rôles.");
-        logService.log(new BaLogDto(EAction.V, "Roles"));
+        logService.log(new BaLogDto(EAction.VIEW, "Roles"));
 
         final List<BaRole> allRoles = roleRepository.findAll();
         final BaUserDto userInfoWithMoreDetails = this.getUserInfoWithMoreDetails();
@@ -245,7 +245,7 @@ public class BaUserService {
      * @return BaRoleDto
      */
     public BaRoleDto addRole(final BaRoleDto roleDto) {
-        logService.log(new BaLogDto(EAction.C, "Roles : " + roleDto.getLibelle()));
+        logService.log(new BaLogDto(EAction.CREATE, "Roles : " + roleDto.getLibelle()));
         BaRole role = mapper.maps(roleDto);
         log.info("Ajoute un nouveau role.");
         return mapper.maps(roleRepository.save(role));
@@ -258,7 +258,7 @@ public class BaUserService {
      * @return Le role mis à jour
      */
     public BaRoleDto updateRole(final BaRoleDto pDto) {
-        logService.log(new BaLogDto(EAction.U, "Roles : " + pDto.getLibelle()));
+        logService.log(new BaLogDto(EAction.UPDATE, "Roles : " + pDto.getLibelle()));
 
         BaRole role;
         if (roleRepository.existsById(pDto.getId())) {
@@ -279,7 +279,7 @@ public class BaUserService {
      */
     public List<BaProfilDto> fetchProfils() {
         log.info("Recupère les profils");
-        logService.log(new BaLogDto(EAction.V, "Profils"));
+        logService.log(new BaLogDto(EAction.VIEW, "Profils"));
 
         List<BaProfilDto> datas;
         datas = profilRepository
@@ -287,8 +287,7 @@ public class BaUserService {
                 .stream()
                 .map(mapper::maps)
                 .collect(Collectors.toList());
-        return datas.stream()
-                .collect(Collectors.toList());
+        return datas;
     }
 
     /**
@@ -299,7 +298,7 @@ public class BaUserService {
      */
     public BaProfilDto addProfil(final BaProfilDto profilDto) {
         profilDto.setId(BaUtils.randomUUID());
-        logService.log(new BaLogDto(EAction.C, "Profils" + profilDto.getLibelle()));
+        logService.log(new BaLogDto(EAction.CREATE, "Profils" + profilDto.getLibelle()));
 
         log.info("Crée un nouveau profil " + profilDto.getLibelle());
         return mapper.maps(profilRepository.save(mapper.maps(profilDto)));
@@ -313,7 +312,7 @@ public class BaUserService {
      */
     public BaProfilDto updateProfil(final BaProfilDto pDto) {
         log.info("Met à jour le profil " + pDto.getLibelle());
-        logService.log(new BaLogDto(EAction.U, "Profils" + pDto.getLibelle()));
+        logService.log(new BaLogDto(EAction.UPDATE, "Profils" + pDto.getLibelle()));
 
         BaProfil profil;
         if (profilRepository.existsById(pDto.getId())) {
@@ -337,7 +336,7 @@ public class BaUserService {
      */
     public void deleteProfil(final String uuid) {
         log.warn("Suppression du profil : {}", uuid);
-        logService.log(new BaLogDto(EAction.D, "Profils" + uuid));
+        logService.log(new BaLogDto(EAction.DELETE, "Profils" + uuid));
 
         if (profilRepository.existsById(uuid)) {
             profilRepository.findById(uuid)
@@ -355,7 +354,7 @@ public class BaUserService {
      */
     public void deleteRole(final String uuid) {
         log.info("Suppression du role : {}", uuid);
-        logService.log(new BaLogDto(EAction.D, "Roles" + uuid));
+        logService.log(new BaLogDto(EAction.DELETE, "Roles" + uuid));
 
         if (roleRepository.existsById(uuid)) {
             roleRepository.deleteById(uuid);
@@ -498,7 +497,7 @@ public class BaUserService {
      */
     public void activateUser(final String idUser) {
         log.info("Try to activate user : {}", idUser);
-        logService.log(new BaLogDto(EAction.D, "Activate un utilisateur " + idUser));
+        logService.log(new BaLogDto(EAction.DELETE, "Activate un utilisateur " + idUser));
 
         this.userRepository.findById(idUser)
                 .ifPresent(usr -> {

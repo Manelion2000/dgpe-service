@@ -50,7 +50,7 @@ public class BaDocumentSpecification {
                 Predicate motsPredicate = cb.disjunction();
                 for (String mot : motsCles) {
                     motsPredicate = cb.or(motsPredicate,
-                            cb.like(cb.lower(root.get("libelle")), "%" + mot.toLowerCase() + "%"));
+                            cb.like(cb.lower(root.get("intitule")), "%" + mot.toLowerCase() + "%"));
                 }
                 predicate = cb.and(predicate, motsPredicate);
             }

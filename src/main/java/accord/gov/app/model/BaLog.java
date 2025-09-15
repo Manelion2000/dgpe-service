@@ -2,11 +2,7 @@ package accord.gov.app.model;
 
 import accord.gov.app.enums.EAction;
 import accord.gov.app.utils.BaUtils;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,7 +20,7 @@ public class BaLog extends BaAbstractAuditingEntity {
     @Column(name = "id")
     private String id = BaUtils.randomUUID();
 
-    @Enumerated
+    @Enumerated(value = EnumType.STRING)
     @Column(name = "action")
     private EAction action;
 
