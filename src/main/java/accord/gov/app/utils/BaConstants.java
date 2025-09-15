@@ -11,14 +11,21 @@ public class BaConstants {
      */
     public static class URL {
         public static final  String BASE_URL = "/api";
+        public static final  String PRODUCT = "/produits";
         public static final String PROFIL = "/profils";
         public static final String ROLE = "/roles";
         public static final String DOCUMENT = "/documents";
         public static final String CSRF_TOKEN = "/csrf";
         public static final String AUTHENTICATE = "/authenticate";
         public static final String USER = "/users";
-        public static final String CATEGORIE = "/categories";
-        public static final String PRODUCT = "/products";
+        public static final String ACCORD = "/accords";
+        public static final String LANGUE = "/langues";
+        public static final String TYPE_ACCORD = "/types_accords";
+        public static final String TYPE_DOCUMENT_AFF = "/types_doc_affs";
+        public static final String PARTIE = "/parties";
+        public static final String DOMAINE = "/domaines";
+        public static final String PAYS="/pays";
+
     }
 
     /**

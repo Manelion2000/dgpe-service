@@ -1,16 +1,16 @@
 server:
-  port: 8085
+  port: 8080   # par défaut, chaque profil peut le surcharger
+
 spring:
-  profiles:
-    active: prod
   application:
     name: accord-Service
-  # Configuration du service mail
+  profiles:
+    active: prod  # profil par défaut
   mail:
     host: mailer.gov.bf
     port: 587
-    username: etraduction@diplomatie.gov.bf
-    password: 'EtraductionBit**2024'
+    username: alertesmae@gmail.com
+    password: 'fevh duqq bksu zlcw'
     protocol: smtp
     properties.mail.smtp:
       auth: true
@@ -18,13 +18,19 @@ spring:
       ssl.trust: ${spring.mail.host}
     test-connection: false
 
-# Configuration personnalisée
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+
+# Configuration personnalisée commune
 app:
   storage:
     path: ./datas
   security:
     attempts:
-      # En nombre de minutes
-      timeout: 5
-      # Nombre de tentatives autorisées.
-      max: 5
+      timeout: 5   # minutes
+      max: 5       # tentatives max

@@ -22,6 +22,9 @@ public class BaPartieDto {
 
     @NotBlank(message = "le libelle de la partie est obligatoire")
     private String libelle;
-    @NotNull(message = "Au moins une partie est obligatoire")
+
+    private String sigle;
+
+    @NotNull(message = "le type de partie est obligatoire")
     private ETypePartie typePartie;
 }

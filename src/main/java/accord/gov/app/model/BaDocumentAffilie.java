@@ -2,10 +2,7 @@ package accord.gov.app.model;
 
 import accord.gov.app.utils.BaUtils;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 
@@ -19,6 +16,7 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @Setter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "ba_document_affilie")
@@ -54,6 +52,6 @@ public class BaDocumentAffilie extends BaAbstractAuditingEntity{
 
     @ManyToOne
     @JoinColumn(name="type_affilie_id",nullable = false)
-    private BaTypeDocumentAffilie affilie;
+    private BaTypeDocumentAffilie typeDocumentAffilie;
 }
 

@@ -1,9 +1,8 @@
 package accord.gov.app.model;
 
 import accord.gov.app.utils.BaUtils;
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +14,9 @@ import java.util.List;
  * @Project : traiteAccordService
  * @since : 06/09/2025 à 02:19
  */
+@Entity
+@Getter @Setter @AllArgsConstructor @NoArgsConstructor @Builder
+@Table(name = "ba_type_document_affilie")
 public class BaTypeDocumentAffilie extends BaAbstractAuditingEntity{
     @Id
     @Column(name = "id")

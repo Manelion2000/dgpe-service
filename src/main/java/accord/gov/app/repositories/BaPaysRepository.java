@@ -12,5 +12,5 @@ import org.springframework.stereotype.Repository;
  * @since : 05/08/2025 à 18:29
  */
 @Repository
-public interface BaPaysRepository extends JpaRepository<String, BaPays> {
+public interface BaPaysRepository extends JpaRepository<BaPays,String> {
 }

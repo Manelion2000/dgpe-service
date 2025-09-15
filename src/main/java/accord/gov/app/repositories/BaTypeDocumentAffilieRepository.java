@@ -4,6 +4,8 @@ import accord.gov.app.model.BaTypeDocumentAffilie;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
  * @version : 1.0
@@ -12,5 +14,6 @@ import org.springframework.stereotype.Repository;
  * @since : 06/09/2025 à 03:20
  */
 @Repository
-public interface BaTypeDocumentAffilieRepository extends JpaRepository<String, BaTypeDocumentAffilie> {
+public interface BaTypeDocumentAffilieRepository extends JpaRepository<BaTypeDocumentAffilie,String > {
+    Optional<BaTypeDocumentAffilie> findByLibelle(String libelle);
 }

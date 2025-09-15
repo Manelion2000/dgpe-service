@@ -1,6 +1,6 @@
 package accord.gov.app.dto;
-
 import jakarta.validation.constraints.NotBlank;
+import lombok.*;
 
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
@@ -9,6 +9,8 @@ import jakarta.validation.constraints.NotBlank;
  * @Project : traiteAccordService
  * @since : 06/09/2025 à 02:22
  */
+@Getter @Setter
+@AllArgsConstructor @NoArgsConstructor @Builder
 public class BaTypeDocumentAffilieDto {
     private String id;
 

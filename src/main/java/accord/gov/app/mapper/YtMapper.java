@@ -33,7 +33,7 @@ public interface YtMapper {
     @Mappings({
             @Mapping(source = "domaines", target = "domaines"),
             @Mapping(source = "langues", target = "langues"),
-            @Mapping(source = "parties", target = "partie"),
+            @Mapping(source = "parties", target = "parties"),
             @Mapping(source = "typeDocument.id",target ="typeDocumentId")
     })
     BaDocumentDto maps(BaDocument entity);
@@ -52,14 +52,14 @@ public interface YtMapper {
     BaFichierDto maps(BaFichier entity);
 
     @InheritInverseConfiguration
-    BaFichierDto maps(BaFichierDto dto);
+    BaFichier maps(BaFichierDto dto);
 /**
      * Convertie le document affilié en Dto
      * @param entity: entité
      * @return un dto
      */
     @Mappings({
-            @Mapping(source = "affilie.id", target = "typeDocumentAffilieId"),
+            @Mapping(source = "typeDocumentAffilie.id", target = "typeDocumentAffilieId"),
             @Mapping(source = "accord.id", target = "documentId")
     })
     BaDocumentAffilieDto maps(BaDocumentAffilie entity);
@@ -119,7 +119,7 @@ public interface YtMapper {
     BaTypeDocumentAffilieDto maps(BaTypeDocumentAffilie entity);
 
     @InheritInverseConfiguration
-    BaTypeAccord maps(BaTypeDocumentAffilieDto dto);
+    BaTypeDocumentAffilie maps(BaTypeDocumentAffilieDto dto);
 
     /**
      * Mapping des log

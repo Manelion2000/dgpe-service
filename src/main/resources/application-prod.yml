@@ -1,15 +1,10 @@
 server:
   port: 8085
+
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    password: MAE2020
     url: jdbc:postgresql://localhost:5432/accord_db
     username: postgres
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-    show-sql: true
+    password: MAE2020
+

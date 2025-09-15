@@ -29,7 +29,10 @@ public class BaPartie extends BaAbstractAuditingEntity{
     @Column(name = "libelle", nullable = false)
     private String libelle;
 
+    @Column(name="sigle", nullable =true)
+    private String sigle;
+
     @Enumerated(value = EnumType.STRING)
-    @Column(name = "type_partie")
+    @Column(name = "type_partie", nullable = false)
     private ETypePartie typePartie;
 }

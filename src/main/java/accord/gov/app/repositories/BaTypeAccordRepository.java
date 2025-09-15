@@ -1,5 +1,6 @@
 package accord.gov.app.repositories;
 
+import accord.gov.app.model.BaTypeAccord;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,5 +12,5 @@ import org.springframework.stereotype.Repository;
  * @since : 07/07/2025 à 19:27
  */
 @Repository
-public interface BaTypeAccordRepository extends JpaRepository<BaTypeAccordRepository,String> {
+public interface BaTypeAccordRepository extends JpaRepository<BaTypeAccord,String> {
 }

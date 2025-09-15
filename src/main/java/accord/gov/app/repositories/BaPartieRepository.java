@@ -4,6 +4,8 @@ import accord.gov.app.model.BaPartie;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
  * @version : 1.0
@@ -13,4 +15,5 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface BaPartieRepository extends JpaRepository<BaPartie,String> {
+    Optional<BaPartie> findByLibelle(String libelle);
 }

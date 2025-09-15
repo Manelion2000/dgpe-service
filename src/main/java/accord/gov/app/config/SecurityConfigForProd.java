@@ -118,15 +118,16 @@ public class SecurityConfigForProd {
                     .requestMatchers(BaConstants.URL.BASE_URL + "/activate").permitAll()
                     .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.USER + "/{id}/activate").permitAll()
                     .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.USER).permitAll()
+                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.LANGUE+ "/").permitAll()
+                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.LANGUE).permitAll()
+                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.PARTIE+"/**").permitAll()
                     .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.AUTHENTICATE).permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.CSRF_TOKEN).permitAll()
                     .requestMatchers(BaConstants.URL.BASE_URL + "/reset/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.CATEGORIE).permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.PRODUCT)
                     .hasAuthority(BaRolesConstants.BA_ADMIN)
                     .requestMatchers(BaConstants.URL.BASE_URL + "/**").authenticated();
         });
-
         http.with(securityConfigurerAdapter(), a -> {
 
         });

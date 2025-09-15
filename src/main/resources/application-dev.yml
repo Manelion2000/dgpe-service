@@ -4,7 +4,7 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
     password: MAE2020
-    url: jdbc:postgresql://localhost:5432/categoriedb
+    url: jdbc:postgresql://localhost:5432/accord_dev
     username: postgres
   jpa:
     hibernate:

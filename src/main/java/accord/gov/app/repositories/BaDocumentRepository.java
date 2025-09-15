@@ -2,6 +2,7 @@ package accord.gov.app.repositories;
 
 import accord.gov.app.model.BaDocument;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -12,6 +13,6 @@ import org.springframework.stereotype.Repository;
  * @since : 07/07/2025 à 19:19
  */
 @Repository
-public interface BaDocumentRepository extends JpaRepository<BaDocument, String> {
+public interface BaDocumentRepository extends JpaRepository<BaDocument, String>, JpaSpecificationExecutor<BaDocument> {
 
 }

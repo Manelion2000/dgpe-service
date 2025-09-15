@@ -34,8 +34,8 @@ public class BaDocument extends BaAbstractAuditingEntity {
     @Column(name = "id")
     private String id = BaUtils.randomUUID();
 
-    @Column(name = "libelle", unique = true, nullable = false)
-    private String libelle;
+    @Column(name = "intitule", unique = true, nullable = false)
+    private String intitule;
 
     @Column(name = "note")
     private String note;

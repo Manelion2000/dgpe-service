@@ -25,11 +25,10 @@ import java.util.Set;
  */
 @Getter
 @Setter
-@Builder
 public class BaDocumentDto {
     @NotBlank(message = "Le libellé du document est obligatoire.")
-    @Size(min = 5, max = 255, message = "Le libellé doit contenir entre 5 et 255 caractères.")
-    private String libelle;
+    @Size(min = 5, max = 400, message = "L'intitulé doit contenir entre 5 et 255 caractères.")
+    private String intitule;
 
     @Size(max = 500, message = "La note ne doit pas dépasser 500 caractères.")
     private String note;
