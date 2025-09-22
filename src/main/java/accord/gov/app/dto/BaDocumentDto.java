@@ -26,7 +26,7 @@ import java.util.Set;
 @Getter
 @Setter
 public class BaDocumentDto {
-    @NotBlank(message = "Le libellé du document est obligatoire.")
+    @NotBlank(message = "Intitulé du document est obligatoire.")
     @Size(min = 5, max = 400, message = "L'intitulé doit contenir entre 5 et 255 caractères.")
     private String intitule;
 

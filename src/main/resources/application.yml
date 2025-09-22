@@ -17,6 +17,11 @@ spring:
       starttls.enable: true
       ssl.trust: ${spring.mail.host}
     test-connection: false
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 20MB
+
 
   jpa:
     hibernate:

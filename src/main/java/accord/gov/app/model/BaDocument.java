@@ -109,5 +109,15 @@ public class BaDocument extends BaAbstractAuditingEntity {
 
     @OneToMany(mappedBy = "accord", cascade = CascadeType.ALL)
     private Set<BaDocumentAffilie> documentsAffilies = new HashSet<>();
+
+    public void addFichier(BaFichier fichier) {
+        fichiers.add(fichier);
+        fichier.setAccord(this);
+    }
+
+    public void removeFichier(BaFichier fichier) {
+        fichiers.remove(fichier);
+        fichier.setAccord(null);
+    }
 }
 

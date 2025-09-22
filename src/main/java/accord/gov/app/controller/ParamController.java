@@ -1,22 +1,20 @@
 package accord.gov.app.controller;
 
 import accord.gov.app.dto.*;
+import accord.gov.app.model.BaDocument;
+import accord.gov.app.model.BaTypeDocumentAffilie;
 import accord.gov.app.service.BaFileStorageService;
 import accord.gov.app.service.BaParamService;
 import accord.gov.app.utils.BaConstants;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -28,16 +26,6 @@ public class ParamController {
     private final BaFileStorageService fileStorage;
 
 //========================= GESTION DES TYPES ACCORD==========================
-    /**
-     * Récupérer un fichier/image/document.
-     *
-     * @param id : l'id du fichier
-     * @return {@link ResponseEntity}
-     */
-    @GetMapping(BaConstants.URL.DOCUMENT + "/{id}")
-    public ResponseEntity<byte[]> loadFile(@PathVariable final String id) {
-        return new ResponseEntity<>(fileStorage.get(id), HttpStatus.OK);
-    }
 
     /**
      * Fonction de création d'un personnel
@@ -81,8 +69,8 @@ public class ParamController {
      */
     @PutMapping(BaConstants.URL.TYPE_ACCORD + "/{id}")
     public ResponseEntity<BaApiResponse<BaTypeAccordDto>> updateTypeAccord(
-            @PathVariable String id,
-            @Valid @RequestBody BaTypeAccordDto dto) {
+            @PathVariable final  String id,
+            @Valid @RequestBody final BaTypeAccordDto dto) {
         BaTypeAccordDto updated = paramService.updateTypeAccord(id, dto);
         return ResponseEntity.ok(new BaApiResponse<>("Type d’accord mis à jour avec succès", HttpStatus.OK.value(), updated));
     }
@@ -93,11 +81,59 @@ public class ParamController {
      * @return confirmation de suppression
      */
     @DeleteMapping(BaConstants.URL.TYPE_ACCORD + "/{id}")
-    public ResponseEntity<BaApiResponse<Void>> deleteTypeAccord(@PathVariable String id) {
+    public ResponseEntity<BaApiResponse<Void>> deleteTypeAccord(@PathVariable final String id) {
         paramService.deleteTypeAccord(id);
         return ResponseEntity.ok(new BaApiResponse<>("Type d’accord supprimé avec succès", HttpStatus.OK.value(), null));
     }
-    //========================= GESTION DES LANGUES==========================
+    //========================= GESTION DES TYPES DE DOCUMENTS AFFILIES==========================
+
+    /**
+     * Fonction de création d'un type de documents affiliés
+     * @param dto DTO du type de document affilié
+     * @return BaTypeDocumentAffile
+     */
+    @PostMapping(BaConstants.URL.TYPE_DOCUMENT_AFF)
+    public ResponseEntity<BaApiResponse<BaTypeDocumentAffilieDto>> createTypeDocumentAffilie(
+            @Valid @RequestBody final BaTypeDocumentAffilieDto dto) {
+        BaTypeDocumentAffilieDto created = paramService.createTypeDocumentAffilie(dto);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(new BaApiResponse<>("type de document affilié créée avec succès", HttpStatus.CREATED.value(), created));
+    }
+
+    /**
+     * Fonction de récupération d’un type de document par son identifiant
+     * @param id identifiant du type de document affilié
+     * @return BaTypeDocumentAffilieDto
+     */
+    @GetMapping(BaConstants.URL.TYPE_DOCUMENT_AFF + "/{id}")
+    public ResponseEntity<BaApiResponse<BaTypeDocumentAffilieDto>> getTypeDocumentAffById(@PathVariable final String id) {
+        BaTypeDocumentAffilieDto dto = paramService.getTypeDocumentAffilieById(id);
+        return ResponseEntity.ok(new BaApiResponse<>("Type de document affilié trouvé", HttpStatus.OK.value(), dto));
+    }
+
+    /**
+     * Fonction de récupération de tous les types de documents affiliés
+     * @return liste des BaTypeDocumentAffDto
+     */
+    @GetMapping(BaConstants.URL.TYPE_DOCUMENT_AFF)
+    public ResponseEntity<BaApiResponse<List<BaTypeDocumentAffilieDto>>> getAllTypeDocAff() {
+        List<BaTypeDocumentAffilieDto> dtos = paramService.getAllTypeDocumentAffilie();
+        return ResponseEntity.ok(new BaApiResponse<>("Liste des types", HttpStatus.OK.value(), dtos));
+    }
+
+    /**
+     * Fonction de suppression d’un type d’accord
+     * @param id identifiant du type d’accord
+     * @return confirmation de suppression
+     */
+    @DeleteMapping(BaConstants.URL.TYPE_DOCUMENT_AFF + "/{id}")
+    public ResponseEntity<BaApiResponse<Void>> deleteTypeDodAff(@PathVariable final String id) {
+        paramService.deleteTypeDocumentAffilie(id);
+        return ResponseEntity.ok(new BaApiResponse<>("Type de document affilié supprimé avec succès", HttpStatus.OK.value(), null));
+    }
+
+    //========================= GESTION DES LANGUES=============================================
 
     /**
      * Fonction de création d'une langue
@@ -106,7 +142,7 @@ public class ParamController {
      */
     @PostMapping(BaConstants.URL.LANGUE)
     public ResponseEntity<BaApiResponse<BaLangueDto>> createLangue(
-            @Valid @RequestBody BaLangueDto dto) {
+            @Valid @RequestBody final BaLangueDto dto) {
         BaLangueDto created = paramService.createLangue(dto);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -290,4 +326,82 @@ public class ParamController {
         return ResponseEntity.ok(new BaApiResponse<>("Partie trouvée par libellé", HttpStatus.OK.value(), partie));
     }
 
-}
+    //===========================GESTION DES DOCUMENTS=============================
+
+    /**
+     *Création d'un traité ou accord avec les fichiers principaux
+     * @param dto: documentDto
+     * @param files: la liste des documents principaux
+     * @return un Dto de document
+     */
+    @PostMapping(
+            value = BaConstants.URL.DOCUMENT,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BaDocumentDto> createDocument(
+            final @Valid @RequestPart("document") BaDocumentDto dto,
+             @RequestPart(value="files", required = true ) List<MultipartFile> files) {
+        return ResponseEntity.ok(paramService.createDocument(dto, files));
+    }
+    /**
+     * Fonction de mise à jour d’une partie
+     * @param id: identifiant de la partie prenante
+     * @return BaPartieDto
+     */
+    @PutMapping(BaConstants.URL.DOCUMENT + "/{id}")
+    public ResponseEntity<BaApiResponse<BaDocumentDto>> updateDocument(
+            @PathVariable final String id,
+            @Valid @RequestBody final  BaDocumentDto dto) {
+        BaDocumentDto updated = paramService.updateDocument(id, dto);
+        return ResponseEntity.ok(new BaApiResponse<>("Document mise à jour avec succès", HttpStatus.OK.value(), updated));
+    }
+
+    /**
+     * Mise de document (retirer et ajouter des fichiers principaux)
+     * @param documentId: id de document
+     * @param newFiles: nouveau fichier
+     * @param filesToDelete : l'ancien fichier à supprimer
+     * @return :
+     * @throws IOException
+     */
+        @PutMapping("/{id}")
+        public ResponseEntity<BaDocumentDto> updateDocument(
+                @PathVariable("id") String documentId,
+                @RequestPart(value = "newFiles", required = false) List<MultipartFile> newFiles,
+                @RequestPart(value = "filesToDelete", required = false) List<String> filesToDelete
+        ) throws IOException {
+            BaDocumentDto updated = paramService.updateDocumentWithFiles(documentId, newFiles, filesToDelete);
+            return ResponseEntity.ok(updated);
+        }
+
+    /**
+     * Endpoint pour uploader un fichier principal associé à un document existant.
+     * Exemple appel (Postman ou Angular) :
+     * POST /api/fichiers/upload
+     * Content-Type: multipart/form-data
+     * Champs :
+     *  - file : le fichier (PDF, DOC, etc.)
+     *  - fichierDto : JSON contenant { "documentId": "xxxx-uuid", "type": "PRINCIPAL" }
+     */
+    @PostMapping(value = BaConstants.URL.DOCUMENT+"/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BaFichierDto> uploadFichier(
+            @RequestPart("file") MultipartFile file,
+            @RequestPart("fichierDto") BaFichierDto fichierDto
+    ) {
+        BaFichierDto saved = paramService.saveFichierPrincipal(file, fichierDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    /**
+     * Supprime un fichier associé à un document (accord ou traité).
+     *
+     * @param fichierId l'ID du personnel.
+     * @param documentId l'ID du document.
+     * @return l'objet BaPersonneDgpeDto mis à jour.
+     */
+    @DeleteMapping(BaConstants.URL.DOCUMENT + "/documents/{documentId}/{fichierId}")
+    public ResponseEntity<BaDocumentDto> removeFichierFromDocument(@PathVariable final String documentId, @PathVariable final String fichierId) {
+        BaDocumentDto updatedDocument= paramService.removeFichierFromAccord(documentId, fichierId);
+        return ResponseEntity.ok(updatedDocument);
+    }
+    }
+

@@ -25,7 +25,7 @@ public class BaFichier extends BaAbstractAuditingEntity {
     @Column(name = "url")
     private String url;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_principal_id")
     private BaDocument accord;
 }

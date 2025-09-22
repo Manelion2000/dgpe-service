@@ -7,6 +7,8 @@ import accord.gov.app.enums.EStatut;
 import accord.gov.app.mapper.YtMapper;
 import accord.gov.app.model.*;
 import accord.gov.app.repositories.*;
+import accord.gov.app.repositories.specification.BaDocumentSpecification;
+import accord.gov.app.service.BaFileStorageService;
 import accord.gov.app.service.BaLogService;
 import accord.gov.app.service.BaParamService;
 import accord.gov.app.utils.BaUtils;
@@ -16,10 +18,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.factory.Mappers;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.Collectors;;
 
 
 @RequiredArgsConstructor
@@ -30,12 +37,14 @@ public class BaParamServiceImpl implements BaParamService {
 
     private final YtMapper mapper = Mappers.getMapper(YtMapper.class);
     private final BaLogService logService;
+    private final BaFileStorageService fileStorageService;
     private final BaTypeAccordRepository typeAccordRepository;
     private final BaTypeDocumentAffilieRepository typeDocumentAffilieRepository;
     private final BaLangueRepository langueRepository;
     private final BaDomaineRepository domaineRepository;
     private final BaPartieRepository partieRepository;
     private final BaDocumentRepository documentRepository;
+    private final BaFichierRepository fichierRepository;
 
     /**
      * Crée un nouveau type d'accord (valable aussi pour les traités)
@@ -466,13 +475,91 @@ public class BaParamServiceImpl implements BaParamService {
      * @return L'accord ou traité créé sous forme de DTO.
      */
     @Override
-    public BaDocumentDto createDocument(BaDocumentDto dto) {
+    public BaDocumentDto createDocument(BaDocumentDto dto, List<MultipartFile> files) {
+        // 1. Mapper le DTO vers l’entité
         BaDocument entity = mapper.maps(dto);
+        entity.setId(BaUtils.randomUUID());
+        // 2. Sauvegarder le document d'abord (pour générer l’ID et gérer les relations)
         documentRepository.save(entity);
+
+        // 3. Si des fichiers sont fournis
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                // 3.1 Sauvegarder physiquement le fichier (retourne le nom unique)
+                String savedFileName = fileStorageService.saveFileDocumentPDF(file);
+
+                // 3.2 Créer une entité BaFichier associée au document
+                BaFichier fichier = BaFichier.builder()
+                        .id(BaUtils.randomUUID())
+                        .libelle(file.getOriginalFilename()) // le vrai nom d’origine
+                        .url(savedFileName) // chemin/nom unique du fichier sauvegardé
+                        .accord(entity) // relation ManyToOne
+                        .build();
+
+                // 3.3 Ajouter au set de fichiers du document
+                entity.getFichiers().add(fichier);
+            }
+        }
+
+        // 4. Sauvegarder encore pour persister les fichiers liés
+        BaDocument saved = documentRepository.save(entity);
+
+        // 5. Logger
         logService.log(new BaLogDto(EAction.CREATE, "Création du document : " + dto.getIntitule()));
-        return mapper.maps(entity);
+
+        // 6. Retourner le DTO
+        return mapper.maps(saved);
     }
-/**
+    /**
+     * Mise à jour d'un document (supprimer et remplacer un fichier)
+     * @param documentId: identifiant de document
+     * @param newFiles: nouveau fichier
+     * @param filesToDelete: fichier à supprimer
+     * @return
+     * @throws IOException
+     */
+    @Override
+    public BaDocumentDto updateDocumentWithFiles(String documentId,
+                                                 List<MultipartFile> newFiles,
+                                                 List<String> filesToDelete) throws IOException {
+        // Charger le document
+        BaDocument document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"Document introuvable"));
+
+        // 1. Supprimer les fichiers demandés
+        if (filesToDelete != null) {
+            for (String fileId : filesToDelete) {
+                BaFichier fichier = fichierRepository.findById(fileId)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"Fichier introuvable"));
+                document.getFichiers().remove(fichier);
+                fichierRepository.delete(fichier);
+
+                // suppression du fichier physique (après succès transaction)
+                registerFileDeletion(fichier.getUrl());
+            }
+        }
+
+        // 2. Ajouter de nouveaux fichiers
+        if (newFiles != null) {
+            for (MultipartFile file : newFiles) {
+                String savedFileName = fileStorageService.saveFileDocumentPDF(file); // méthode utilitaire
+                BaFichier fichier = BaFichier.builder()
+                        .id(BaUtils.randomUUID())
+                        .libelle(file.getOriginalFilename())
+                        .url(savedFileName)
+                        .accord(document)
+                        .build();
+
+                document.getFichiers().add(fichier);
+
+                // suppression du fichier physique si rollback
+                registerFileRollback(savedFileName);
+            }
+        }
+        return mapper.maps(documentRepository.save(document));
+    }
+
+    /**
  * Mise à jour du traité ou accord
  */
 
@@ -527,5 +614,134 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
         List<BaDocument> list = documentRepository.findAll();
         logService.log(new BaLogDto(EAction.VIEW, "Consultation de la liste des documents"));
         return list.stream().map(mapper::maps).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<BaDocumentDto> searchMulticritere(String typeId,
+                                      List<String> langueIds,
+                                      List<String> domaineIds,
+                                      List<String> partieIds,
+                                      List<String> motsCles,
+                                      String nature) {
+
+        // Utilisation de la specification pour filtrer
+        List<BaDocument> results = documentRepository.findAll(
+                BaDocumentSpecification.filter(
+                        typeId,
+                        langueIds,
+                        domaineIds,
+                        partieIds,
+                        motsCles,
+                        nature
+                )
+        );
+
+        // Log de la recherche
+        logService.log(new BaLogDto(EAction.VIEW, "Recherche multicritère de documents"));
+
+        // Transformation en DTO
+        return results.stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+
+
+    //===============================GESTION DES FICHIERS=====================
+
+    /**
+     * Joindre un fichier principal à un document
+     * @param file: le fichier
+     * @param fichierDto: dto du fichier
+     * @return un Dto
+     */
+    @Override
+    public BaFichierDto saveFichierPrincipal(MultipartFile file, BaFichierDto fichierDto) {
+        // 1. Vérification fichier
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le fichier est vide ou manquant.");
+        }
+
+        // 2. Sauvegarde physique du fichier sur le disque (ou stockage cloud)
+        String nomUnique = fileStorageService.saveFileDocumentPDF(file);
+
+        // 3. Vérification de l'ID du document
+        if (fichierDto.getDocumentId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'ID du document est obligatoire.");
+        }
+
+        // 4. Récupération du document parent
+        BaDocument doc = documentRepository.findById(fichierDto.getDocumentId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable."));
+
+        // 5. Création de l'entité BaFichier à partir du DTO
+        BaFichier baFichier = mapper.maps(fichierDto);
+        baFichier.setId(BaUtils.randomUUID());   // UUID unique
+        baFichier.setAccord(doc);                // lien avec le document
+        baFichier.setUrl(nomUnique);             // chemin/nom du fichier sauvegardé
+        baFichier.setLibelle(file.getOriginalFilename()); // nom original pour info utilisateur
+
+        // 6. Sauvegarde en base
+        BaFichier saved = fichierRepository.save(baFichier);
+
+        // 7. Retour DTO
+        return mapper.maps(saved);
+    }
+    /**
+     * Supprime un fichier principal d'un traité ou accord.
+     * @param fichierId: identifiant du personnel
+     * @param documentId: identifiant du document
+     */
+    @Override
+    public BaDocumentDto removeFichierFromAccord(String documentId, String fichierId) {
+        // Vérifier l'existence du document
+        BaDocument doc = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "le personnel est introuvable avec l'ID fourni."));;
+
+        // Vérifier l'existence du document
+        BaFichier fichier = fichierRepository.findById(fichierId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable"));
+
+        // Vérifier que le fichier est associé à un document(traité ou accord)
+        if (!doc.getFichiers().contains(fichier)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le fichier n'est pas associé à ce document");
+        }
+
+        // Supprimer le fichier de l'ensemble des documents
+        doc.getFichiers().remove(fichier);
+
+        // Supprimer le document de la base de données si nécessaire
+        fichierRepository.delete(fichier);
+
+        // Sauvegarder le personnel mise à jour
+        BaDocument dc=documentRepository.save(doc);
+
+        logService.log(new BaLogDto(EAction.DELETE, "Suppression d'un document " + documentId + " d'un accord " + documentId));
+        return mapper.maps(dc);
+
+    }
+
+    private void registerFileRollback(String filePath) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    // rollback → supprimer le fichier créé
+                    new File(filePath).delete();
+                }
+            }
+        });
+    }
+
+    private void registerFileDeletion(String filePath) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_COMMITTED) {
+                    // suppression confirmée après commit
+                    new File(filePath).delete();
+                }
+            }
+        });
     }
 }

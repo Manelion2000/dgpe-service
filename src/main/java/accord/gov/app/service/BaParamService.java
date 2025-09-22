@@ -1,6 +1,9 @@
 package accord.gov.app.service;
 
 import accord.gov.app.dto.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.util.List;
 
 public interface BaParamService {
@@ -60,11 +63,26 @@ public interface BaParamService {
 
     BaPartieDto getPartieByLibelle(final String libelle,final BaPartieDto dto);
 
-    BaDocumentDto createDocument(BaDocumentDto dto);
+    BaDocumentDto createDocument(BaDocumentDto dto,List<MultipartFile> files);
+
+    BaDocumentDto updateDocumentWithFiles(String documentId,
+                                          List<MultipartFile> newFiles,
+                                          List<String> filesToDelete) throws IOException;
 
     BaDocumentDto updateDocument(String id, BaDocumentDto dto);
 
     void deleteDocument(String id);
 
     List<BaDocumentDto> getAllDocument();
+
+    List<BaDocumentDto> searchMulticritere(String typeId,
+                               List<String> langueIds,
+                               List<String> domaineIds,
+                               List<String> partieIds,
+                               List<String> motsCles,
+                               String nature);
+
+    BaFichierDto saveFichierPrincipal(MultipartFile file, BaFichierDto fichierDto);
+
+    BaDocumentDto removeFichierFromAccord(String documentId, String fichierId);
 }
