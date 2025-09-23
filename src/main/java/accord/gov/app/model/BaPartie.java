@@ -26,7 +26,7 @@ public class BaPartie extends BaAbstractAuditingEntity{
     @Column(name = "id")
     private String id = BaUtils.randomUUID();
 
-    @Column(name = "libelle", nullable = false)
+    @Column(name = "libelle", nullable = false, unique = true)
     private String libelle;
 
     @Column(name="sigle", nullable =true)

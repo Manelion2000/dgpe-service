@@ -130,7 +130,8 @@ public class SecurityConfigForProd {
                     .requestMatchers(BaConstants.URL.BASE_URL + "/reset/**").permitAll()
                     .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.PRODUCT)
                     .hasAuthority(BaRolesConstants.BA_ADMIN)
-                    .requestMatchers(BaConstants.URL.BASE_URL + "/**").authenticated();
+                    .requestMatchers(BaConstants.URL.BASE_URL + "/**").authenticated()
+                    .anyRequest().authenticated();
         });
         http.with(securityConfigurerAdapter(), a -> {
 

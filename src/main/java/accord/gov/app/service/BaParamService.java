@@ -75,12 +75,18 @@ public interface BaParamService {
 
     List<BaDocumentDto> getAllDocument();
 
+    List<BaDocumentDto> getAllDocumentByStatutActive();
+
+    List<BaDocumentDto> getAllDocumentByStatutArchives();
+
     List<BaDocumentDto> searchMulticritere(String typeId,
-                               List<String> langueIds,
-                               List<String> domaineIds,
-                               List<String> partieIds,
-                               List<String> motsCles,
-                               String nature);
+                                           List<String> langueIds,
+                                           List<String> domaineIds,
+                                           List<String> partieIds,
+                                           List<String> motsCles,
+                                           String nature);
+
+    List<BaDocumentDto> searchMulticritereViaDto(BaDocumentSearchRequest request);
 
     BaFichierDto saveFichierPrincipal(MultipartFile file, BaFichierDto fichierDto);
 

@@ -101,7 +101,7 @@ public interface YtMapper {
     BaLangue maps(BaLangueDto dto);
 
     /**
-     * Convertie un parti en Dto
+     * Convertie un type d'accord en Dto
      * @param entity: entité
      * @return un dto
      */

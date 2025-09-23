@@ -616,6 +616,27 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
         return list.stream().map(mapper::maps).collect(Collectors.toList());
     }
 
+    /**
+     * listes des documents actives
+     * @return une liste de documents active
+     */
+    @Override
+    public List<BaDocumentDto> getAllDocumentByStatutActive() {
+        List<BaDocument> list = documentRepository.findByStatut(EStatut.A);
+        logService.log(new BaLogDto(EAction.VIEW, "Consultation de la liste des documents actifs"));
+        return list.stream().map(mapper::maps).collect(Collectors.toList());
+    }
+    /**
+     * Listes des documents archivés
+     * @return une liste de documents active
+     */
+    @Override
+    public List<BaDocumentDto> getAllDocumentByStatutArchives() {
+        List<BaDocument> list = documentRepository.findByStatut(EStatut.D);
+        logService.log(new BaLogDto(EAction.VIEW, "Consultation de la liste des documents archivés"));
+        return list.stream().map(mapper::maps).collect(Collectors.toList());
+    }
+
     @Override
     public List<BaDocumentDto> searchMulticritere(String typeId,
                                       List<String> langueIds,
@@ -638,6 +659,36 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
 
         // Log de la recherche
         logService.log(new BaLogDto(EAction.VIEW, "Recherche multicritère de documents"));
+
+        // Transformation en DTO
+        return results.stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Recherche multicritère via Dto Service
+     * @param request : request de la Dto
+     * @return une liste de document
+     */
+    @Override
+    public List<BaDocumentDto> searchMulticritereViaDto(BaDocumentSearchRequest request) {
+
+
+        // Utilisation de la specification pour filtrer
+        List<BaDocument> results = documentRepository.findAll(
+                BaDocumentSpecification.filter(
+                        request.getTypeId(),
+                        request.getLangueIds(),
+                        request.getDomaines(),
+                        request.getParties(),
+                        request.getKeywords(),
+                        request.getNature()
+                )
+        );
+
+        // Log de la recherche
+        logService.log(new BaLogDto(EAction.VIEW, "Recherche multicritère de documents via DTO"));
 
         // Transformation en DTO
         return results.stream()

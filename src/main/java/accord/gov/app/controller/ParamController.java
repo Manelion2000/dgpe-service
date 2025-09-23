@@ -1,11 +1,11 @@
 package accord.gov.app.controller;
 
 import accord.gov.app.dto.*;
-import accord.gov.app.model.BaDocument;
-import accord.gov.app.model.BaTypeDocumentAffilie;
 import accord.gov.app.service.BaFileStorageService;
 import accord.gov.app.service.BaParamService;
 import accord.gov.app.utils.BaConstants;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(BaConstants.URL.BASE_URL)
+@CrossOrigin(origins= {"*"})
 public class ParamController {
 
     private final BaParamService paramService;
@@ -33,11 +34,9 @@ public class ParamController {
      * @return BaTypeAccordDto
      */
     @PostMapping(BaConstants.URL.TYPE_ACCORD)
-    public ResponseEntity<BaApiResponse<BaTypeAccordDto>> createTypeAccord(@Valid @RequestBody BaTypeAccordDto dto) {
+    public ResponseEntity<BaTypeAccordDto> createTypeAccord(@Valid @RequestBody BaTypeAccordDto dto) {
         BaTypeAccordDto created = paramService.createTypeAccord(dto);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(new BaApiResponse<>("Type d’accord créé avec succès", HttpStatus.CREATED.value(), created));
+        return new ResponseEntity(created,HttpStatus.CREATED);
     }
 
     /**
@@ -93,12 +92,9 @@ public class ParamController {
      * @return BaTypeDocumentAffile
      */
     @PostMapping(BaConstants.URL.TYPE_DOCUMENT_AFF)
-    public ResponseEntity<BaApiResponse<BaTypeDocumentAffilieDto>> createTypeDocumentAffilie(
+    public ResponseEntity<BaTypeDocumentAffilieDto> createTypeDocumentAffilie(
             @Valid @RequestBody final BaTypeDocumentAffilieDto dto) {
-        BaTypeDocumentAffilieDto created = paramService.createTypeDocumentAffilie(dto);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(new BaApiResponse<>("type de document affilié créée avec succès", HttpStatus.CREATED.value(), created));
+        return new ResponseEntity<>(paramService.createTypeDocumentAffilie(dto), HttpStatus.CREATED);
     }
 
     /**
@@ -130,7 +126,7 @@ public class ParamController {
     @DeleteMapping(BaConstants.URL.TYPE_DOCUMENT_AFF + "/{id}")
     public ResponseEntity<BaApiResponse<Void>> deleteTypeDodAff(@PathVariable final String id) {
         paramService.deleteTypeDocumentAffilie(id);
-        return ResponseEntity.ok(new BaApiResponse<>("Type de document affilié supprimé avec succès", HttpStatus.OK.value(), null));
+        return ResponseEntity.noContent().build();
     }
 
     //========================= GESTION DES LANGUES=============================================
@@ -141,12 +137,9 @@ public class ParamController {
      * @return BaLangueDto
      */
     @PostMapping(BaConstants.URL.LANGUE)
-    public ResponseEntity<BaApiResponse<BaLangueDto>> createLangue(
+    public ResponseEntity<BaLangueDto> createLangue(
             @Valid @RequestBody final BaLangueDto dto) {
-        BaLangueDto created = paramService.createLangue(dto);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(new BaApiResponse<>("Langue créée avec succès", HttpStatus.CREATED.value(), created));
+        return new ResponseEntity<>(paramService.createLangue(dto), HttpStatus.CREATED);
     }
 
     /**
@@ -165,9 +158,8 @@ public class ParamController {
      * @return liste des BaTypeAccordDto
      */
     @GetMapping(BaConstants.URL.LANGUE)
-    public ResponseEntity<BaApiResponse<List<BaLangueDto>>> getAllLangues() {
-        List<BaLangueDto> dtos = paramService.getAllLangue();
-        return ResponseEntity.ok(new BaApiResponse<>("Liste des langues", HttpStatus.OK.value(), dtos));
+    public List<BaLangueDto> getAllLangues() {
+        return  paramService.getAllLangue();
     }
     /**
      * Fonction de mise à jour d'une langue
@@ -176,11 +168,10 @@ public class ParamController {
      * @return BaLangueDto
      */
     @PutMapping(BaConstants.URL.LANGUE + "/{id}")
-    public ResponseEntity<BaApiResponse<BaLangueDto>> updateLangue(
+    public ResponseEntity<BaLangueDto> updateLangue(
             @PathVariable String id,
             @Valid @RequestBody BaLangueDto dto) {
-        BaLangueDto updated = paramService.updateTypeAccord(id, dto);
-        return ResponseEntity.ok(new BaApiResponse<>("Langue mise à jour avec succès", HttpStatus.OK.value(), updated));
+        return ResponseEntity.ok(paramService.updateTypeAccord(id, dto));
     }
 
     /**
@@ -189,9 +180,9 @@ public class ParamController {
      * @return confirmation
      */
     @DeleteMapping(BaConstants.URL.LANGUE + "/{id}")
-    public ResponseEntity<BaApiResponse<Void>> deleteLangue(@PathVariable String id) {
+    public  ResponseEntity<Void> deleteLangue(@PathVariable String id) {
         paramService.deleteLangue(id);
-        return ResponseEntity.ok(new BaApiResponse<>("Langue supprimée avec succès", HttpStatus.OK.value(), null));
+        return ResponseEntity.noContent().build();
     }
 //======================GESTION DES DOMAINES==========================
     /**
@@ -200,12 +191,10 @@ public class ParamController {
      * @return BaDomaineDto
      */
     @PostMapping(BaConstants.URL.DOMAINE)
-    public ResponseEntity<BaApiResponse<BaDomaineDto>> createDomaine(@Valid @RequestBody BaDomaineDto dto) {
+    public ResponseEntity<BaDomaineDto> createDomaine(@Valid @RequestBody BaDomaineDto dto) {
         BaDomaineDto created = paramService.createDomaine(dto);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(new BaApiResponse<>("Domaine créé avec succès", HttpStatus.CREATED.value(), created));
-    }
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
+}
 
     /**
      * Fonction de récupération d’un domaine par son ID
@@ -223,9 +212,8 @@ public class ParamController {
      * @return une Liste de dto de BaDomaineDto
      */
     @GetMapping(BaConstants.URL.DOMAINE)
-    public ResponseEntity<BaApiResponse<List<BaDomaineDto>>> getAllDomaines() {
-        List<BaDomaineDto> dtos = paramService.getAllDomaine();
-        return ResponseEntity.ok(new BaApiResponse<>("Liste des domaines", HttpStatus.OK.value(), dtos));
+    public ResponseEntity<List<BaDomaineDto>> getAllDomaines() {
+        return new ResponseEntity<>(paramService.getAllDomaine(), HttpStatus.OK);
     }
 
     /**
@@ -247,9 +235,9 @@ public class ParamController {
      *@return BaDomaineDto
      */
     @DeleteMapping(BaConstants.URL.DOMAINE + "/{id}")
-    public ResponseEntity<BaApiResponse<Void>> deleteDomaine(@PathVariable String id) {
+    public ResponseEntity<Void> deleteDomaine(@PathVariable String id) {
         paramService.deleteDomaine(id);
-        return ResponseEntity.ok(new BaApiResponse<>("Domaine supprimé avec succès", HttpStatus.OK.value(), null));
+        return ResponseEntity.noContent().build();
     }
 
     //========================GESTION DES PARTIES====================
@@ -260,11 +248,8 @@ public class ParamController {
      * @return BaDomaineDto
      */
     @PostMapping(BaConstants.URL.PARTIE)
-    public ResponseEntity<BaApiResponse<BaPartieDto>> createPartie(@Valid @RequestBody BaPartieDto dto) {
-        BaPartieDto created = paramService.createPartie(dto);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(new BaApiResponse<>("Partie créé avec succès", HttpStatus.CREATED.value(), created));
+    public ResponseEntity<BaPartieDto> createPartie(@Valid @RequestBody BaPartieDto dto) {
+        return new ResponseEntity<>( paramService.createPartie(dto), HttpStatus.CREATED);
     }
 
     /**
@@ -283,9 +268,8 @@ public class ParamController {
      * @return une List<BaPartie> une liste de toutes les parties prenantes
      */
     @GetMapping(BaConstants.URL.PARTIE)
-    public ResponseEntity<BaApiResponse<List<BaPartieDto>>> getAllParties() {
-        List<BaPartieDto> dtos = paramService.getAllPartie();
-        return ResponseEntity.ok(new BaApiResponse<>("Liste des parties", HttpStatus.OK.value(), dtos));
+    public ResponseEntity<List<BaPartieDto>> getAllParties() {
+        return ResponseEntity.ok(paramService.getAllPartie());
     }
 
     /**
@@ -308,9 +292,9 @@ public class ParamController {
      * @return BaPartie
      */
     @DeleteMapping(BaConstants.URL.PARTIE + "/{id}")
-    public ResponseEntity<BaApiResponse<Void>> deletePartie(@PathVariable String id, @RequestBody BaPartieDto dto) {
+    public ResponseEntity<Void> deletePartie(@PathVariable String id, @RequestBody BaPartieDto dto) {
         paramService.deletePartie(id, dto);
-        return ResponseEntity.ok(new BaApiResponse<>("Partie supprimée avec succès", HttpStatus.OK.value(), null));
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -342,6 +326,27 @@ public class ParamController {
              @RequestPart(value="files", required = true ) List<MultipartFile> files) {
         return ResponseEntity.ok(paramService.createDocument(dto, files));
     }
+
+    /**
+     * Liste des documents actifs
+     * @return une liste de documents actifs
+     */
+
+    @GetMapping(BaConstants.URL.DOCUMENT)
+    public ResponseEntity<List<BaDocumentDto>> getAllDocActive(){
+        return ResponseEntity.ok((paramService.getAllDocumentByStatutActive()));
+    }
+    /**
+     * Liste des documents archivés
+     * @return une liste de documents archivés
+     */
+
+    @GetMapping(BaConstants.URL.DOCUMENT+"/archives")
+    public ResponseEntity<List<BaDocumentDto>> getAllDocArchives(){
+        return ResponseEntity.ok((paramService.getAllDocumentByStatutArchives()));
+    }
+
+
     /**
      * Fonction de mise à jour d’une partie
      * @param id: identifiant de la partie prenante
@@ -363,7 +368,7 @@ public class ParamController {
      * @return :
      * @throws IOException
      */
-        @PutMapping("/{id}")
+        @PutMapping(BaConstants.URL.DOCUMENT+"/update/{id}")
         public ResponseEntity<BaDocumentDto> updateDocument(
                 @PathVariable("id") String documentId,
                 @RequestPart(value = "newFiles", required = false) List<MultipartFile> newFiles,
@@ -403,5 +408,24 @@ public class ParamController {
         BaDocumentDto updatedDocument= paramService.removeFichierFromAccord(documentId, fichierId);
         return ResponseEntity.ok(updatedDocument);
     }
+
+    /**
+     * 🔹 Recherche multicritère de documents
+     *
+     * Tous les champs du formulaire sont optionnels.
+     * Exemple : chercher un traité militaire et sécuritaire bilatéral entre le Burkina et l’Iran
+     *
+     * @param request Objet contenant les critères de recherche
+     * @return Liste des documents correspondant aux critères
+     */
+    @Operation(summary = "Recherche multicritère", description = "Recherche avancée avec filtres (type, langues, domaines, parties, mots-clés, etc.)")
+    @ApiResponse(responseCode = "200", description = "Résultats de la recherche")
+    @PostMapping(BaConstants.URL.DOCUMENT+"/search/multicritere")
+    public ResponseEntity<BaApiResponse<List<BaDocumentDto>>> searchDocuments(
+            @Valid @RequestBody BaDocumentSearchRequest request
+    ) {
+        List<BaDocumentDto> results = paramService.searchMulticritereViaDto(request);
+        return ResponseEntity.ok(new BaApiResponse<>("Résultats de recherche", HttpStatus.OK.value(), results));
     }
+}
 
