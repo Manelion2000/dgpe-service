@@ -3,6 +3,7 @@ package accord.gov.app.service.impl;
 
 import accord.gov.app.dto.*;
 import accord.gov.app.enums.EAction;
+import accord.gov.app.enums.EConfidentiel;
 import accord.gov.app.enums.EStatut;
 import accord.gov.app.mapper.YtMapper;
 import accord.gov.app.model.*;
@@ -616,26 +617,22 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
         return list.stream().map(mapper::maps).collect(Collectors.toList());
     }
 
-    /**
-     * listes des documents actives
-     * @return une liste de documents active
-     */
     @Override
-    public List<BaDocumentDto> getAllDocumentByStatutActive() {
-        List<BaDocument> list = documentRepository.findByStatut(EStatut.A);
-        logService.log(new BaLogDto(EAction.VIEW, "Consultation de la liste des documents actifs"));
+    public List<BaDocumentDto> getAllDocumentsByStatutAndConfidentialite(EStatut statut, EConfidentiel confidentiel) {
+        // Récupération des documents
+        List<BaDocument> list = documentRepository.findByStatutAndConfidentialite(statut, confidentiel);
+
+        // Construction du message de log selon la confidentialité
+        String confidentialiteLabel = (confidentiel == EConfidentiel.OUI) ? "confidentiels" : "non confidentiels";
+        logService.log(new BaLogDto(
+                EAction.VIEW,
+                String.format("Consultation de la liste des documents %s et %s", statut.name(), confidentialiteLabel)
+        ));
+
+        // Mapping entités -> DTOs
         return list.stream().map(mapper::maps).collect(Collectors.toList());
     }
-    /**
-     * Listes des documents archivés
-     * @return une liste de documents active
-     */
-    @Override
-    public List<BaDocumentDto> getAllDocumentByStatutArchives() {
-        List<BaDocument> list = documentRepository.findByStatut(EStatut.D);
-        logService.log(new BaLogDto(EAction.VIEW, "Consultation de la liste des documents archivés"));
-        return list.stream().map(mapper::maps).collect(Collectors.toList());
-    }
+
 
     @Override
     public List<BaDocumentDto> searchMulticritere(String typeId,

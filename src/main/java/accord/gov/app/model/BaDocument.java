@@ -1,6 +1,7 @@
 package accord.gov.app.model;
 
 import accord.gov.app.enums.EConfidentiel;
+import accord.gov.app.enums.EEtatEnVigeur;
 import accord.gov.app.enums.ENatureDocument;
 import accord.gov.app.utils.BaUtils;
 import jakarta.persistence.*;
@@ -47,10 +48,11 @@ public class BaDocument extends BaAbstractAuditingEntity {
     private String resume;
 
     @Column(name = "code_boite")
-    private Integer codeBoite;
+    private String codeBoite;
 
     @Column(name = "etat_accord_vigueur")
-    private String etatAccordVigueur;
+    @Enumerated(EnumType.STRING)
+    private EEtatEnVigeur etatAccordVigueur;
 
     @Column(name = "confidentialite")
     @Enumerated(EnumType.STRING)

@@ -1,6 +1,8 @@
 package accord.gov.app.service;
 
 import accord.gov.app.dto.*;
+import accord.gov.app.enums.EConfidentiel;
+import accord.gov.app.enums.EStatut;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -75,9 +77,13 @@ public interface BaParamService {
 
     List<BaDocumentDto> getAllDocument();
 
-    List<BaDocumentDto> getAllDocumentByStatutActive();
+    //List<BaDocumentDto> getAllDocumentByStatutActive();
 
-    List<BaDocumentDto> getAllDocumentByStatutArchives();
+    //List<BaDocumentDto> getAllDocumentByStatutActiveEtConfidentiel();
+
+    //List<BaDocumentDto> getAllDocumentByStatutArchives();
+
+    List<BaDocumentDto> getAllDocumentsByStatutAndConfidentialite(EStatut statut, EConfidentiel confidentiel);
 
     List<BaDocumentDto> searchMulticritere(String typeId,
                                            List<String> langueIds,

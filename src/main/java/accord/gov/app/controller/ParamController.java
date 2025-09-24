@@ -1,6 +1,8 @@
 package accord.gov.app.controller;
 
 import accord.gov.app.dto.*;
+import accord.gov.app.enums.EConfidentiel;
+import accord.gov.app.enums.EStatut;
 import accord.gov.app.service.BaFileStorageService;
 import accord.gov.app.service.BaParamService;
 import accord.gov.app.utils.BaConstants;
@@ -334,7 +336,16 @@ public class ParamController {
 
     @GetMapping(BaConstants.URL.DOCUMENT)
     public ResponseEntity<List<BaDocumentDto>> getAllDocActive(){
-        return ResponseEntity.ok((paramService.getAllDocumentByStatutActive()));
+        return ResponseEntity.ok((paramService.getAllDocumentsByStatutAndConfidentialite(EStatut.A, EConfidentiel.NON)));
+    }
+    /**
+     * Liste des documents actifs
+     * @return une liste de documents actifs
+     */
+
+    @GetMapping(BaConstants.URL.DOCUMENT+"/confidentiel")
+    public ResponseEntity<List<BaDocumentDto>> getAllDocActiveEtConfidentiel(){
+        return ResponseEntity.ok((paramService.getAllDocumentsByStatutAndConfidentialite(EStatut.A,EConfidentiel.OUI)));
     }
     /**
      * Liste des documents archivés
@@ -343,7 +354,16 @@ public class ParamController {
 
     @GetMapping(BaConstants.URL.DOCUMENT+"/archives")
     public ResponseEntity<List<BaDocumentDto>> getAllDocArchives(){
-        return ResponseEntity.ok((paramService.getAllDocumentByStatutArchives()));
+        return ResponseEntity.ok((paramService.getAllDocumentsByStatutAndConfidentialite(EStatut.D,EConfidentiel.NON)));
+    }
+    /**
+     * Liste des documents confidentiel archivés
+     * @return une liste de documents archivés
+     */
+
+    @GetMapping(BaConstants.URL.DOCUMENT+"/archives_confidentiel")
+    public ResponseEntity<List<BaDocumentDto>> getAllDocConfidentielArchive(){
+        return ResponseEntity.ok((paramService.getAllDocumentsByStatutAndConfidentialite(EStatut.D,EConfidentiel.OUI)));
     }
 
 
@@ -428,4 +448,3 @@ public class ParamController {
         return ResponseEntity.ok(new BaApiResponse<>("Résultats de recherche", HttpStatus.OK.value(), results));
     }
 }
-

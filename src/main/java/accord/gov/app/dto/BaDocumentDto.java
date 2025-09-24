@@ -1,6 +1,7 @@
 package accord.gov.app.dto;
 
 import accord.gov.app.enums.EConfidentiel;
+import accord.gov.app.enums.EEtatEnVigeur;
 import accord.gov.app.enums.ENatureDocument;
 import accord.gov.app.model.BaDomaine;
 import accord.gov.app.model.BaLangue;
@@ -26,6 +27,8 @@ import java.util.Set;
 @Getter
 @Setter
 public class BaDocumentDto {
+    private String id;
+
     @NotBlank(message = "Intitulé du document est obligatoire.")
     @Size(min = 5, max = 400, message = "L'intitulé doit contenir entre 5 et 255 caractères.")
     private String intitule;
@@ -39,10 +42,10 @@ public class BaDocumentDto {
     @Size(max = 2000, message = "Le résumé ne doit pas dépasser 2000 caractères.")
     private String resume;
 
-    private Integer codeBoite;
+    private String codeBoite;
 
     @Size(max = 100)
-    private String etatAccordVigueur;
+    private EEtatEnVigeur etatAccordVigueur;
 
     @NotNull(message = "Le niveau de confidentialité est obligatoire.")
     private EConfidentiel confidentialite = EConfidentiel.NON;

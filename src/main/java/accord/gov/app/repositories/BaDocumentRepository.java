@@ -1,5 +1,6 @@
 package accord.gov.app.repositories;
 
+import accord.gov.app.enums.EConfidentiel;
 import accord.gov.app.enums.EStatut;
 import accord.gov.app.model.BaDocument;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,5 +19,5 @@ import java.util.List;
 @Repository
 public interface BaDocumentRepository extends JpaRepository<BaDocument, String>, JpaSpecificationExecutor<BaDocument> {
 
-    List<BaDocument> findByStatut(EStatut eStatut);
+    List<BaDocument> findByStatutAndConfidentialite(EStatut eStatut, EConfidentiel eConfidentiel);
 }
