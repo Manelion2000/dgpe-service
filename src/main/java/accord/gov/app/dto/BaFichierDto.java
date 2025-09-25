@@ -1,7 +1,6 @@
 package accord.gov.app.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
@@ -10,11 +9,13 @@ import lombok.Setter;
  * @Project : traiteAccordService
  * @since : 14/07/2025 à 13:08
  */
-@Getter @Setter
+@Getter @Setter  @AllArgsConstructor @NoArgsConstructor
+@Builder
 public class BaFichierDto {
     private String id;
     private String libelle;
     private String url;
     private String documentId;
+    private String affilieId;
 
 }

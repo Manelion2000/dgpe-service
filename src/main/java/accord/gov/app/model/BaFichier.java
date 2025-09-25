@@ -1,5 +1,7 @@
 package accord.gov.app.model;
 
+import accord.gov.app.enums.ETypeFichier;
+import accord.gov.app.repositories.BaDocumentAffilieRepository;
 import accord.gov.app.utils.BaUtils;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,7 +27,15 @@ public class BaFichier extends BaAbstractAuditingEntity {
     @Column(name = "url")
     private String url;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_fichier", nullable = false)
+    private ETypeFichier type;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_principal_id")
     private BaDocument accord;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "document_affilie_id")
+    private BaDocumentAffilie affilie;
 }

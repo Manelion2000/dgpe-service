@@ -1,5 +1,6 @@
 package accord.gov.app.service;
 
+import accord.gov.app.model.BaFichier;
 import accord.gov.app.repositories.BaFichierRepository;
 import accord.gov.app.utils.BaUtils;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.Optional;
@@ -153,12 +155,12 @@ public class BaFileStorageService {
                     "Le fichier doit être au format PDF");
         }
 
-        // 4. Génération d’un nom unique
-        String uniqueFileName =  originalFileName+ "." + fileExtension;
+        // 4. Génération d’un nom unique:
+        // pas nécessaire vu qu'on utilise le nom original du document
 
         // 5. Création du chemin de destination
         Path storageDir = Paths.get(basePath).toAbsolutePath().normalize();
-        Path targetPath = storageDir.resolve(uniqueFileName);
+        Path targetPath = storageDir.resolve(originalFileName);
 
         try {
             // Créer le répertoire s’il n’existe pas
@@ -167,7 +169,7 @@ public class BaFileStorageService {
             // Sauvegarde avec REPLACE_EXISTING (écrase si même nom)
             Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-            return uniqueFileName;
+            return originalFileName;
 
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Erreur lors de la sauvegarde du fichier : " + originalFileName, e);
@@ -193,5 +195,33 @@ public class BaFileStorageService {
         // Générer un nom unique pour le fichier
         String uniqueFileName = originalFileName + "." + fileExtension;
         return uniqueFileName;
+    }
+
+    /**
+     * Récupérer le contenu d'un fichier d'une autorisation spéciale (Note Verbale)
+     * @param idDoc identifiant du fichier.
+     * @return un tableau de byte
+     */
+    public byte[] getFichier(final String idDoc) {
+
+        BaFichier fi= fichierRepository.findById(idDoc).orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "Fichier introuvable avec id" +idDoc));
+        // Construire le chemin complet du fichier
+        String fullPath = basePath + File.separator + fi.getUrl();
+        File file = new File(fullPath);
+
+        try {
+            // Vérifier si le fichier existe
+            if (file.exists()) {
+                log.info("Chargement du fichier : {}", fullPath);
+                return Files.readAllBytes(file.toPath());
+            } else {
+                log.warn("Fichier inexistant au chemin : {}", fullPath);
+                throw new FileNotFoundException("Le fichier avec l'ID " + idDoc + " n'existe pas dans le répertoire " + basePath);
+            }
+        } catch (IOException e) {
+            log.error("Erreur lors de la lecture du fichier : " + idDoc, e);
+            throw new RuntimeException("Erreur de lecture du fichier " + idDoc, e);
+        }
     }
 }

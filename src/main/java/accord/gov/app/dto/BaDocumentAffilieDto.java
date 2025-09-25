@@ -1,11 +1,14 @@
 package accord.gov.app.dto;
 
+import accord.gov.app.model.BaFichier;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
@@ -32,6 +35,8 @@ public class BaDocumentAffilieDto {
     private LocalDate dateRatification;
 
     private String documentId;
+
+    private Set<BaFichierDto> fichierDtos;
 
     @NotBlank(message = "le type de document affilé doit être precisé")
     private String typeDocumentAffilieId;

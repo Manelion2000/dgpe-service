@@ -3,6 +3,9 @@ package accord.gov.app.controller;
 import accord.gov.app.dto.*;
 import accord.gov.app.enums.EConfidentiel;
 import accord.gov.app.enums.EStatut;
+import accord.gov.app.model.BaDocumentAffilie;
+import accord.gov.app.model.BaFichier;
+import accord.gov.app.repositories.BaFichierRepository;
 import accord.gov.app.service.BaFileStorageService;
 import accord.gov.app.service.BaParamService;
 import accord.gov.app.utils.BaConstants;
@@ -10,11 +13,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
@@ -27,6 +29,7 @@ public class ParamController {
 
     private final BaParamService paramService;
     private final BaFileStorageService fileStorage;
+    private  final BaFichierRepository fichierRepository;
 
 //========================= GESTION DES TYPES ACCORD==========================
 
@@ -38,7 +41,7 @@ public class ParamController {
     @PostMapping(BaConstants.URL.TYPE_ACCORD)
     public ResponseEntity<BaTypeAccordDto> createTypeAccord(@Valid @RequestBody BaTypeAccordDto dto) {
         BaTypeAccordDto created = paramService.createTypeAccord(dto);
-        return new ResponseEntity(created,HttpStatus.CREATED);
+        return new ResponseEntity<>(created,HttpStatus.CREATED);
     }
 
     /**
@@ -57,9 +60,9 @@ public class ParamController {
      * @return liste des BaTypeAccordDto
      */
     @GetMapping(BaConstants.URL.TYPE_ACCORD)
-    public ResponseEntity<BaApiResponse<List<BaTypeAccordDto>>> getAllTypeAccords() {
+    public ResponseEntity<List<BaTypeAccordDto>>getAllTypeAccords() {
         List<BaTypeAccordDto> dtos = paramService.getAlTypeAccord();
-        return ResponseEntity.ok(new BaApiResponse<>("Liste des types d’accords", HttpStatus.OK.value(), dtos));
+        return ResponseEntity.ok(dtos);
     }
 
     /**
@@ -301,7 +304,7 @@ public class ParamController {
 
     /**
      * Fonction de récupération d’une partie par son libellé
-     * @param libelle
+     * @param libelle:
      * @param dto: dto partie prenante
      * @return BaPartie
      */
@@ -327,6 +330,20 @@ public class ParamController {
             final @Valid @RequestPart("document") BaDocumentDto dto,
              @RequestPart(value="files", required = true ) List<MultipartFile> files) {
         return ResponseEntity.ok(paramService.createDocument(dto, files));
+    }
+    /**
+     *Création d'un document affilié avec les fichiers principaux
+     * @param dto: documentAffilieDto
+     * @param file: fichier affilié
+     * @return un Dto de document affilié
+     */
+    @PostMapping(
+            value = BaConstants.URL.DOCUMENT_AFF,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BaDocumentAffilieDto> createDocumentAffilie(
+            final @Valid @RequestPart("document") BaDocumentAffilieDto dto,
+             @RequestPart(value="file", required = true ) MultipartFile file) {
+        return ResponseEntity.ok(paramService.createDocumentAffilie(dto, file));
     }
 
     /**
@@ -373,11 +390,11 @@ public class ParamController {
      * @return BaPartieDto
      */
     @PutMapping(BaConstants.URL.DOCUMENT + "/{id}")
-    public ResponseEntity<BaApiResponse<BaDocumentDto>> updateDocument(
+    public ResponseEntity<BaDocumentDto> updateDocument(
             @PathVariable final String id,
             @Valid @RequestBody final  BaDocumentDto dto) {
         BaDocumentDto updated = paramService.updateDocument(id, dto);
-        return ResponseEntity.ok(new BaApiResponse<>("Document mise à jour avec succès", HttpStatus.OK.value(), updated));
+        return ResponseEntity.ok(updated);
     }
 
     /**
@@ -386,7 +403,7 @@ public class ParamController {
      * @param newFiles: nouveau fichier
      * @param filesToDelete : l'ancien fichier à supprimer
      * @return :
-     * @throws IOException
+     * @throws IOException:
      */
         @PutMapping(BaConstants.URL.DOCUMENT+"/update/{id}")
         public ResponseEntity<BaDocumentDto> updateDocument(
@@ -397,6 +414,29 @@ public class ParamController {
             BaDocumentDto updated = paramService.updateDocumentWithFiles(documentId, newFiles, filesToDelete);
             return ResponseEntity.ok(updated);
         }
+
+    /**
+     * Récupérer tous les fichiers liés à un document
+     * @param idDoc: id du document
+     * @return la liste de tous les fichiers
+     */
+
+    @GetMapping(BaConstants.URL.DOCUMENT + "/fichiers/{idDoc}")
+    public ResponseEntity<List<BaFichierDto>> getFichiersByDocument(@PathVariable String idDoc) {
+        List<BaFichierDto> fichiers = paramService.getFichiersByDocumentId(idDoc);
+        return ResponseEntity.ok(fichiers);
+    }
+    /**
+     * Récupérer tous les fichiers liés à un document affilié
+     * @param idDoc: id du document
+     * @return la liste de tous les fichiers
+     */
+
+    @GetMapping(BaConstants.URL.DOCUMENT + "/fichier_affilie/{idDoc}")
+    public ResponseEntity<List<BaFichierDto>> getFichiersByDocumentAffilie(@PathVariable String idDoc) {
+        List<BaFichierDto> fichiers = paramService.getFichiersByDocumentAffilieId(idDoc);
+        return ResponseEntity.ok(fichiers);
+    }
 
     /**
      * Endpoint pour uploader un fichier principal associé à un document existant.
@@ -431,7 +471,6 @@ public class ParamController {
 
     /**
      * 🔹 Recherche multicritère de documents
-     *
      * Tous les champs du formulaire sont optionnels.
      * Exemple : chercher un traité militaire et sécuritaire bilatéral entre le Burkina et l’Iran
      *
@@ -441,10 +480,88 @@ public class ParamController {
     @Operation(summary = "Recherche multicritère", description = "Recherche avancée avec filtres (type, langues, domaines, parties, mots-clés, etc.)")
     @ApiResponse(responseCode = "200", description = "Résultats de la recherche")
     @PostMapping(BaConstants.URL.DOCUMENT+"/search/multicritere")
-    public ResponseEntity<BaApiResponse<List<BaDocumentDto>>> searchDocuments(
-            @Valid @RequestBody BaDocumentSearchRequest request
+    public ResponseEntity<List<BaDocumentDto>> searchDocuments(
+            @Valid @RequestBody final BaDocumentSearchRequest request
     ) {
         List<BaDocumentDto> results = paramService.searchMulticritereViaDto(request);
-        return ResponseEntity.ok(new BaApiResponse<>("Résultats de recherche", HttpStatus.OK.value(), results));
+        return ResponseEntity.ok(results);
     }
+
+    /**
+     * Endpoint pour visualiser ou télécharger un document d'autorisation spéciale.
+     * - Si `download=true`, le document est téléchargé.
+     * - Sinon, il est affiché dans le navigateur (visualisation PDF).
+     * Exemple d'URL :
+     * - Visualiser : GET /api/document/lecture/autorisation/{idDoc}
+     * - Télécharger : GET /api/document/lecture/autorisation/{idDoc}?download=true
+     *
+     * @param idDoc L'identifiant du document.
+     * @param download Indique si le fichier doit être téléchargé (true) ou affiché (false par défaut).
+     * @return Le document en tant que flux de données.
+     */
+    @GetMapping(BaConstants.URL.DOCUMENT + "/read/{idDoc}")
+    public ResponseEntity<byte[]> lireOuTelechargerUnfichierPrincipale(
+            @PathVariable final String idDoc,
+            @RequestParam(name = "download", defaultValue = "true") boolean download) {
+
+        // 1. Charger le fichier en base
+        BaFichier fichier = fichierRepository.findById(idDoc)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Fichier introuvable avec l'ID : " + idDoc));
+
+        // 2. Lire les octets du fichier
+        byte[] fileBytes = fileStorage.getFichier(fichier.getUrl());
+
+        // 3. Déterminer le nom du fichier (sinon valeur par défaut)
+        String nomFichier = fichier.getLibelle() != null
+                ? fichier.getLibelle()
+                : "document.pdf";
+
+        // 4. Préparer les headers HTTP
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+
+        if (download) {
+            headers.setContentDisposition(
+                    ContentDisposition.attachment().filename(nomFichier).build()
+            );
+        } else {
+            headers.setContentDisposition(
+                    ContentDisposition.inline().filename(nomFichier).build()
+            );
+        }
+
+        // 5. Retourner la réponse
+        return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
+    }
+
+    /**
+     * Même service que le precedent
+     * @param idDoc: id du document
+     * @param download;
+     * @return un byte
+     */
+    @GetMapping(BaConstants.URL.DOCUMENT + "/telecharger/{idDoc}")
+    public ResponseEntity<byte[]> lire(
+            @PathVariable final String idDoc,
+            @RequestParam(name = "download", defaultValue = "true") boolean download) {
+
+        return paramService.telechargerFichier(idDoc, download);
+    }
+
+    /**
+     * Endpoint pour récupérer tous les documents affiliés d’un document principal avec leurs fichiers
+     *
+     * @param documentId ID du document principal
+     * @return Liste de DTOs des documents affiliés avec fichiers
+     */
+    @GetMapping(BaConstants.URL.DOCUMENT_AFF+"/document/{documentId}")
+    public ResponseEntity<List<BaDocumentAffilieDto>> getAffiliesWithFiles(
+            @PathVariable String documentId) {
+        List<BaDocumentAffilieDto> affilies = paramService.getAllAffiliesWithFiles(documentId);
+        return ResponseEntity.ok(affilies);
+    }
+
+
 }

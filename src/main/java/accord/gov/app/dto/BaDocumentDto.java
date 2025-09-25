@@ -34,7 +34,7 @@ public class BaDocumentDto {
     private String intitule;
 
     @Size(max = 500, message = "La note ne doit pas dépasser 500 caractères.")
-    private String note;
+    private String cote;
 
     @Size(max = 100, message = "Les mots-clés ne doivent pas dépasser 100 caractères.")
     private String motCle;
@@ -44,7 +44,6 @@ public class BaDocumentDto {
 
     private String codeBoite;
 
-    @Size(max = 100)
     private EEtatEnVigeur etatAccordVigueur;
 
     @NotNull(message = "Le niveau de confidentialité est obligatoire.")

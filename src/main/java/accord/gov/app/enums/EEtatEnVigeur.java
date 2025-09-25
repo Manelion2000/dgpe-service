@@ -8,9 +8,8 @@ package accord.gov.app.enums;
  * @since : 04/09/2025 à 13:50
  */
 public enum EEtatEnVigeur {
-    VIGEUR,
+    EN_VIGUEUR,
     DENONCE,
     RETRAIT,
     ETEINT
-
 }

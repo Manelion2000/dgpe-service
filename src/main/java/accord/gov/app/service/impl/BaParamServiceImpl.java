@@ -2,9 +2,11 @@ package accord.gov.app.service.impl;
 
 
 import accord.gov.app.dto.*;
+import accord.gov.app.dto.BaFichierDto;
 import accord.gov.app.enums.EAction;
 import accord.gov.app.enums.EConfidentiel;
 import accord.gov.app.enums.EStatut;
+import accord.gov.app.enums.ETypeFichier;
 import accord.gov.app.mapper.YtMapper;
 import accord.gov.app.model.*;
 import accord.gov.app.repositories.*;
@@ -17,7 +19,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.factory.Mappers;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -26,7 +28,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;;
 
 
@@ -45,6 +49,7 @@ public class BaParamServiceImpl implements BaParamService {
     private final BaDomaineRepository domaineRepository;
     private final BaPartieRepository partieRepository;
     private final BaDocumentRepository documentRepository;
+    private final BaDocumentAffilieRepository documentAffilieRepository;
     private final BaFichierRepository fichierRepository;
 
     /**
@@ -476,7 +481,7 @@ public class BaParamServiceImpl implements BaParamService {
      * @return L'accord ou traité créé sous forme de DTO.
      */
     @Override
-    public BaDocumentDto createDocument(BaDocumentDto dto, List<MultipartFile> files) {
+    public BaDocumentDto createDocumentP(BaDocumentDto dto, List<MultipartFile> files) {
         // 1. Mapper le DTO vers l’entité
         BaDocument entity = mapper.maps(dto);
         entity.setId(BaUtils.randomUUID());
@@ -495,6 +500,7 @@ public class BaParamServiceImpl implements BaParamService {
                         .libelle(file.getOriginalFilename()) // le vrai nom d’origine
                         .url(savedFileName) // chemin/nom unique du fichier sauvegardé
                         .accord(entity) // relation ManyToOne
+                        .affilie(null)
                         .build();
 
                 // 3.3 Ajouter au set de fichiers du document
@@ -509,6 +515,30 @@ public class BaParamServiceImpl implements BaParamService {
         logService.log(new BaLogDto(EAction.CREATE, "Création du document : " + dto.getIntitule()));
 
         // 6. Retourner le DTO
+        return mapper.maps(saved);
+    }
+
+    @Override
+    public BaDocumentDto createDocument(BaDocumentDto dto, List<MultipartFile> files) {
+        // 1. Mapper DTO → entité
+        BaDocument entity = mapper.maps(dto);
+        entity.setId(BaUtils.randomUUID());
+        documentRepository.save(entity);
+
+        // 2. Traiter les fichiers
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                String savedFileName = fileStorageService.saveFileDocumentPDF(file);
+                buildAndAttachFile(file, savedFileName, entity, null); // Accord non null
+            }
+        }
+
+        // 3. Persister avec ses fichiers
+        BaDocument saved = documentRepository.save(entity);
+
+        // 4. Log
+        logService.log(new BaLogDto(EAction.CREATE, "Création du document : " + dto.getIntitule()));
+
         return mapper.maps(saved);
     }
     /**
@@ -549,6 +579,7 @@ public class BaParamServiceImpl implements BaParamService {
                         .libelle(file.getOriginalFilename())
                         .url(savedFileName)
                         .accord(document)
+                        .affilie(null)
                         .build();
 
                 document.getFichiers().add(fichier);
@@ -570,7 +601,7 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Document introuvable"));
 
     entity.setIntitule(dto.getIntitule());
-    entity.setNote(dto.getNote());
+    entity.setNote(dto.getCote());
     entity.setMotCle(dto.getMotCle());
     entity.setResume(dto.getResume());
     entity.setCodeBoite(dto.getCodeBoite());
@@ -695,6 +726,8 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
 
 
 
+
+
     //===============================GESTION DES FICHIERS=====================
 
     /**
@@ -768,6 +801,166 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
         return mapper.maps(dc);
 
     }
+    //===============GESTION DES DOCUMENTS AFFILIES=============
+    /**
+     * Crée un nouveau traité ou accord.
+     *
+     * @param dto DTO contenant les informations l'accord ou traité.
+     * @return L'accord ou traité créé sous forme de DTO.
+     */
+    @Override
+    public BaDocumentAffilieDto createDocumentAffilieP(BaDocumentAffilieDto dto, MultipartFile file) {
+        // 1. Mapper le DTO vers l’entité
+        BaDocumentAffilie entity = mapper.maps(dto);
+        entity.setId(BaUtils.randomUUID());
+        // 2. Sauvegarder le document d'abord (pour générer l’ID et gérer les relations)
+        documentAffilieRepository.save(entity);
+
+        // 3. Si des fichiers sont fournis
+        if (file != null && !file.isEmpty()) {
+                // 3.1 Sauvegarder physiquement le fichier (retourne le nom unique)
+                String savedFileName = fileStorageService.saveFileDocumentPDF(file);
+
+                // 3.2 Créer une entité BaFichier associée au document
+                BaFichier fichier = BaFichier.builder()
+                        .id(BaUtils.randomUUID())
+                        .libelle(file.getOriginalFilename()) // le vrai nom d’origine
+                        .url(savedFileName) // chemin/nom unique du fichier sauvegardé
+                        .affilie(entity) // relation ManyToOne
+                        .accord(null)
+                        .build();
+
+                // 3.3 Ajouter au set de fichiers du document
+                entity.getFichiers().add(fichier);
+
+        }
+
+        // 4. Sauvegarder encore pour persister les fichiers liés
+        BaDocumentAffilie saved = documentAffilieRepository.save(entity);
+
+        // 5. Logger
+        logService.log(new BaLogDto(EAction.CREATE, "Création du document : " + dto.getTitre()));
+
+        // 6. Retourner le DTO
+        return mapper.maps(saved);
+    }
+
+    @Override
+    public BaDocumentAffilieDto createDocumentAffilie(BaDocumentAffilieDto dto, MultipartFile file) {
+        // 1. Mapper le DTO vers l’entité
+        BaDocumentAffilie entity = mapper.maps(dto);
+        entity.setId(BaUtils.randomUUID());
+
+        // ⚠️ Initialiser le Set de fichiers si ce n’est pas déjà fait
+        // entity.getFichiers() peut être null après le mapping. On initialise donc avec new HashSet<>() pour éviter le NullPointerException
+        if (entity.getFichiers() == null) {
+            entity.setFichiers(new HashSet<>());
+        }
+
+        // 2. Sauvegarder le document affilié d'abord (pour générer l'ID)
+        documentAffilieRepository.save(entity);
+
+        // 3. Traiter le fichier associé (si présent)
+        if (file != null && !file.isEmpty()) {
+            // 3.1 Sauvegarder physiquement le fichier
+            String savedFileName = fileStorageService.saveFileDocumentPDF(file);
+
+            // 3.2 Créer l'entité BaFichier et l'associer au document affilié
+            BaFichier fichier = BaFichier.builder()
+                    .id(BaUtils.randomUUID())
+                    .libelle(file.getOriginalFilename())
+                    .url(savedFileName)
+                    .type(ETypeFichier.AFFILIE)
+                    .affilie(entity)  // lien ManyToOne vers le document affilié
+                    .accord(null)     // pas associé au document principal
+                    .build();
+
+            // 3.3 Ajouter le fichier au Set du document affilié
+            entity.getFichiers().add(fichier);
+        }
+
+        // 4. Sauvegarder à nouveau pour persister le fichier lié
+        BaDocumentAffilie saved = documentAffilieRepository.save(entity);
+
+        // 5. Log de l’action
+        logService.log(new BaLogDto(EAction.CREATE, "Création du document affilié : " + dto.getTitre()));
+
+        // 6. Retourner le DTO correspondant
+        return mapper.maps(saved);
+    }
+    /**
+     * Récupérer tous les documents affiliés d’un document principal avec leurs fichiers
+     *
+     * @param documentId ID du document principal
+     * @return Liste des DTOs des documents affiliés, chaque DTO contient la liste des fichiers
+     */
+    @Override
+    public List<BaDocumentAffilieDto> getAllAffiliesWithFiles(String documentId) {
+        // 1. Vérifier l’existence du document principal
+        BaDocument principal = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Document principal introuvable avec l'ID : " + documentId));
+
+        // 2. Récupérer tous les documents affiliés liés au document principal
+        List<BaDocumentAffilie> affilies = documentAffilieRepository.findByAccord(principal);
+
+        // 3. Logger l’action
+        logService.log(new BaLogDto(EAction.VIEW,
+                "Consultation des documents affiliés et fichiers du document : " + principal.getIntitule()));
+
+        // 4. Mapper en DTO et inclure les fichiers
+        return affilies.stream()
+                .map(affilie -> {
+                    BaDocumentAffilieDto dto = mapper.maps(affilie);
+                    // Inclure les fichiers associés
+                    if (affilie.getFichiers() != null) {
+                        List<BaFichierDto> fichiersDto = affilie.getFichiers().stream()
+                                .map(fichier -> {
+                                    BaFichierDto fDto = new BaFichierDto();
+                                    fDto.setId(fichier.getId());
+                                    fDto.setLibelle(fichier.getLibelle());
+                                    fDto.setUrl(fichier.getUrl());
+                                    fDto.setAffilieId(affilie.getId());
+                                    return fDto;
+                                })
+                                .collect(Collectors.toList());
+                        dto.setFichierDtos((Set<BaFichierDto>) fichiersDto);
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Fonction utilitaire pour la création des documents et documents affiliés
+     * @param file: fichier à téléverser
+     * @param savedFileName: le nom du nom à retourner
+     * @param accord: le
+     * @param affilie
+     */
+
+    private void buildAndAttachFile(MultipartFile file, String savedFileName,
+                                    BaDocument accord, BaDocumentAffilie affilie) {
+        ETypeFichier type = (accord != null) ? ETypeFichier.PRINCIPAL : ETypeFichier.AFFILIE;
+
+        BaFichier fichier = BaFichier.builder()
+                .id(BaUtils.randomUUID())
+                .libelle(file.getOriginalFilename())
+                .url(savedFileName)
+                .type(type)
+                .accord(accord)
+                .affilie(affilie)
+                .build();
+
+        if (accord != null) {
+            accord.getFichiers().add(fichier);
+        } else if (affilie != null) {
+            affilie.getFichiers().add(fichier);
+        }
+
+    }
+
 
     private void registerFileRollback(String filePath) {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -792,4 +985,82 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
             }
         });
     }
+
+    //========Gestion des de lecture des fichiers des Fichier==========
+
+    /**
+     * Récupère tous les fichiers associés à un document.
+     */
+    @Override
+    public List<BaFichierDto> getFichiersByDocumentId(String documentId) {
+        BaDocument document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Document introuvable avec ID : " + documentId
+                ));
+
+        return document.getFichiers()
+                .stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Récupère tous les fichiers associés à un document.
+     */
+    @Override
+    public List<BaFichierDto> getFichiersByDocumentAffilieId(String docId) {
+         BaDocumentAffilie documentAffilie = documentAffilieRepository.findById(docId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Document introuvable avec ID : " + docId
+                ));
+
+        return documentAffilie.getFichiers()
+                .stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Récupère tous les fichiers associés à un document affilié.
+     */
+    @Override
+    public byte[] readAllByteOfFichier(String idFichier) {
+        // 1. Récupérer le fichier en base
+        BaFichier fichier = fichierRepository.findById(idFichier)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Fichier introuvable avec l'ID : " + idFichier));
+
+        // 2. Lire le contenu du fichier stocké (le service reçoit l'URL unique du fichier)
+        return fileStorageService.getFichier(fichier.getUrl());
+    }
+
+    @Override
+public ResponseEntity<byte[]> telechargerFichier(String idFichier, boolean download) {
+        // 1. Récupérer l'entité fichier
+        BaFichier fichier = fichierRepository.findById(idFichier)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Fichier introuvable avec l'ID : " + idFichier));
+
+        // 2. Lire le contenu binaire
+        byte[] fileBytes = fileStorageService.getFichier(fichier.getUrl());
+
+        // 3. Nom du fichier (par défaut : document.pdf)
+        String nomFichier = fichier.getLibelle() != null ? fichier.getLibelle() : "document.pdf";
+
+        // 4. Préparer les headers HTTP
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+
+        if (download) {
+            headers.setContentDisposition(ContentDisposition.attachment().filename(nomFichier).build());
+        } else {
+            headers.setContentDisposition(ContentDisposition.inline().filename(nomFichier).build());
+        }
+
+        // 5. Construire la réponse HTTP complète
+        return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
+    }
+
 }

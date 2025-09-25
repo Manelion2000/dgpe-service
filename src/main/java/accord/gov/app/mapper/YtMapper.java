@@ -47,7 +47,8 @@ public interface YtMapper {
      * @return un dto
      */
     @Mappings({
-            @Mapping(source = "accord.id", target = "documentId")
+            @Mapping(source = "accord.id", target = "documentId"),
+            @Mapping(source = "affilie.id",target = "affilieId")
     })
     BaFichierDto maps(BaFichier entity);
 

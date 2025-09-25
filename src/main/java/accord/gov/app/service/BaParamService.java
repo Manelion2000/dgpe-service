@@ -3,6 +3,7 @@ package accord.gov.app.service;
 import accord.gov.app.dto.*;
 import accord.gov.app.enums.EConfidentiel;
 import accord.gov.app.enums.EStatut;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -94,7 +95,24 @@ public interface BaParamService {
 
     List<BaDocumentDto> searchMulticritereViaDto(BaDocumentSearchRequest request);
 
+    BaDocumentDto createDocumentP(BaDocumentDto dto, List<MultipartFile> files);
+
     BaFichierDto saveFichierPrincipal(MultipartFile file, BaFichierDto fichierDto);
 
     BaDocumentDto removeFichierFromAccord(String documentId, String fichierId);
+
+    BaDocumentAffilieDto createDocumentAffilie(BaDocumentAffilieDto dto, MultipartFile file);
+
+    BaDocumentAffilieDto createDocumentAffilieP(BaDocumentAffilieDto dto, MultipartFile file);
+
+    List<BaDocumentAffilieDto> getAllAffiliesWithFiles(String documentId);
+
+    List<BaFichierDto> getFichiersByDocumentId(String documentId);
+
+    List<BaFichierDto> getFichiersByDocumentAffilieId(String docId);
+
+    //========Gestion des de lecture des fichiers des Fichier==========
+    byte[] readAllByteOfFichier(String idFichier);
+
+    ResponseEntity<byte[]> telechargerFichier(String idFichier, boolean download);
 }

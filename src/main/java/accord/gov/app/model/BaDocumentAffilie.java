@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
@@ -53,5 +55,18 @@ public class BaDocumentAffilie extends BaAbstractAuditingEntity{
     @ManyToOne
     @JoinColumn(name="type_affilie_id",nullable = false)
     private BaTypeDocumentAffilie typeDocumentAffilie;
+
+    @OneToMany(mappedBy = "affilie", cascade = CascadeType.ALL)
+    private Set<BaFichier> fichiers = new HashSet<>();
+
+    public void addFichier(BaFichier fichier) {
+        fichiers.add(fichier);
+        fichier.setAffilie(this);
+    }
+
+    public void removeFichier(BaFichier fichier) {
+        fichiers.remove(fichier);
+        fichier.setAccord(null);
+    }
 }
 
