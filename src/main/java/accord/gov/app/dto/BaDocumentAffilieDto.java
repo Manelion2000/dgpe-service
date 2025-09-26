@@ -2,9 +2,7 @@ package accord.gov.app.dto;
 
 import accord.gov.app.model.BaFichier;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -17,7 +15,8 @@ import java.util.Set;
  * @project : traiteAccordService
  * @since : 07/07/2025 à 18:59
  */
-@Getter @Setter @Builder
+@Getter @Setter  @NoArgsConstructor @AllArgsConstructor
+@Builder
 public class BaDocumentAffilieDto {
     private String id;
 
@@ -26,9 +25,6 @@ public class BaDocumentAffilieDto {
 
     @NotBlank(message = "le code de la boite es obligatoire")
     private String codeBoite;
-
-    @NotBlank(message = "le titre du document est obligatoire")
-    private String titre;
 
     private LocalDate dateSignature;
 

@@ -33,9 +33,6 @@ public class BaDocumentAffilie extends BaAbstractAuditingEntity{
     @Column(name = "code_boite")
     private String codeBoite;
 
-    @Column(name = "titre")
-    private String titre;
-
     @Column(name = "date_signature")
     private LocalDate dateSignature;
 

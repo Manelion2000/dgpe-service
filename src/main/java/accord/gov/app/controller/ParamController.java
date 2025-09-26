@@ -118,9 +118,9 @@ public class ParamController {
      * @return liste des BaTypeDocumentAffDto
      */
     @GetMapping(BaConstants.URL.TYPE_DOCUMENT_AFF)
-    public ResponseEntity<BaApiResponse<List<BaTypeDocumentAffilieDto>>> getAllTypeDocAff() {
+    public ResponseEntity<List<BaTypeDocumentAffilieDto>> getAllTypeDocAff() {
         List<BaTypeDocumentAffilieDto> dtos = paramService.getAllTypeDocumentAffilie();
-        return ResponseEntity.ok(new BaApiResponse<>("Liste des types", HttpStatus.OK.value(), dtos));
+        return new ResponseEntity<>(dtos, HttpStatus.OK);
     }
 
     /**
@@ -128,7 +128,7 @@ public class ParamController {
      * @param id identifiant du type d’accord
      * @return confirmation de suppression
      */
-    @DeleteMapping(BaConstants.URL.TYPE_DOCUMENT_AFF + "/{id}")
+    @PatchMapping(BaConstants.URL.TYPE_DOCUMENT_AFF + "/{id}")
     public ResponseEntity<BaApiResponse<Void>> deleteTypeDodAff(@PathVariable final String id) {
         paramService.deleteTypeDocumentAffilie(id);
         return ResponseEntity.noContent().build();
@@ -184,7 +184,7 @@ public class ParamController {
      * @param id identifiant de la langue
      * @return confirmation
      */
-    @DeleteMapping(BaConstants.URL.LANGUE + "/{id}")
+    @PatchMapping(BaConstants.URL.LANGUE + "/{id}")
     public  ResponseEntity<Void> deleteLangue(@PathVariable String id) {
         paramService.deleteLangue(id);
         return ResponseEntity.noContent().build();
@@ -239,7 +239,7 @@ public class ParamController {
      *@param id domaine
      *@return BaDomaineDto
      */
-    @DeleteMapping(BaConstants.URL.DOMAINE + "/{id}")
+    @PatchMapping(BaConstants.URL.DOMAINE + "/{id}")
     public ResponseEntity<Void> deleteDomaine(@PathVariable String id) {
         paramService.deleteDomaine(id);
         return ResponseEntity.noContent().build();
@@ -296,7 +296,7 @@ public class ParamController {
      * @param dto : Dto de la partie
      * @return BaPartie
      */
-    @DeleteMapping(BaConstants.URL.PARTIE + "/{id}")
+    @PatchMapping(BaConstants.URL.PARTIE + "/{id}")
     public ResponseEntity<Void> deletePartie(@PathVariable String id, @RequestBody BaPartieDto dto) {
         paramService.deletePartie(id, dto);
         return ResponseEntity.noContent().build();

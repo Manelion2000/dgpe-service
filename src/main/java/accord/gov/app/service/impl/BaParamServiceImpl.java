@@ -839,7 +839,7 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
         BaDocumentAffilie saved = documentAffilieRepository.save(entity);
 
         // 5. Logger
-        logService.log(new BaLogDto(EAction.CREATE, "Création du document : " + dto.getTitre()));
+        logService.log(new BaLogDto(EAction.CREATE, "Création du document : " + dto.getIntituleAffilie()));
 
         // 6. Retourner le DTO
         return mapper.maps(saved);
@@ -883,7 +883,7 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
         BaDocumentAffilie saved = documentAffilieRepository.save(entity);
 
         // 5. Log de l’action
-        logService.log(new BaLogDto(EAction.CREATE, "Création du document affilié : " + dto.getTitre()));
+        logService.log(new BaLogDto(EAction.CREATE, "Création du document affilié : " + dto.getIntituleAffilie()));
 
         // 6. Retourner le DTO correspondant
         return mapper.maps(saved);
