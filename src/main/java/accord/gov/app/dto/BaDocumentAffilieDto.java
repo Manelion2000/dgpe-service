@@ -32,8 +32,10 @@ public class BaDocumentAffilieDto {
 
     private String documentId;
 
-    private Set<BaFichierDto> fichierDtos;
+    private Set<BaFichierDto> fichiers;
 
     @NotBlank(message = "le type de document affilé doit être precisé")
     private String typeDocumentAffilieId;
+
+    private String libelleTypeAffilie;
 }

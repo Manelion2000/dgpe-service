@@ -634,7 +634,7 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
     }
 
     @Override
-    public BaDocumentDto getById(String id) {
+    public BaDocumentDto getByDocumentById(String id) {
         BaDocument entity = documentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Document introuvable"));
         logService.log(new BaLogDto(EAction.VIEW, "Consultation du document ID: " + id));
@@ -723,9 +723,6 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
                 .map(mapper::maps)
                 .collect(Collectors.toList());
     }
-
-
-
 
 
     //===============================GESTION DES FICHIERS=====================
@@ -913,9 +910,9 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
         return affilies.stream()
                 .map(affilie -> {
                     BaDocumentAffilieDto dto = mapper.maps(affilie);
-                    // Inclure les fichiers associés
+
                     if (affilie.getFichiers() != null) {
-                        List<BaFichierDto> fichiersDto = affilie.getFichiers().stream()
+                        Set<BaFichierDto> fichiersDto = affilie.getFichiers().stream()
                                 .map(fichier -> {
                                     BaFichierDto fDto = new BaFichierDto();
                                     fDto.setId(fichier.getId());
@@ -924,13 +921,15 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
                                     fDto.setAffilieId(affilie.getId());
                                     return fDto;
                                 })
-                                .collect(Collectors.toList());
-                        dto.setFichierDtos((Set<BaFichierDto>) fichiersDto);
+                                .collect(Collectors.toSet());
+                        dto.setFichiers(fichiersDto);
                     }
+
                     return dto;
                 })
                 .collect(Collectors.toList());
     }
+
 
     /**
      * Fonction utilitaire pour la création des documents et documents affiliés
@@ -1025,27 +1024,23 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
      */
     @Override
     public byte[] readAllByteOfFichier(String idFichier) {
-        // 1. Récupérer le fichier en base
-        BaFichier fichier = fichierRepository.findById(idFichier)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Fichier introuvable avec l'ID : " + idFichier));
 
         // 2. Lire le contenu du fichier stocké (le service reçoit l'URL unique du fichier)
-        return fileStorageService.getFichier(fichier.getUrl());
+        return fileStorageService.getFichier(idFichier);
     }
 
     @Override
 public ResponseEntity<byte[]> telechargerFichier(String idFichier, boolean download) {
-        // 1. Récupérer l'entité fichier
+
+
+        // 1. Lire le contenu binaire
+        byte[] fileBytes = fileStorageService.getFichier(idFichier);
+
+// 2. Récupérer l'entité fichier
         BaFichier fichier = fichierRepository.findById(idFichier)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
                         "Fichier introuvable avec l'ID : " + idFichier));
-
-        // 2. Lire le contenu binaire
-        byte[] fileBytes = fileStorageService.getFichier(fichier.getUrl());
-
         // 3. Nom du fichier (par défaut : document.pdf)
         String nomFichier = fichier.getLibelle() != null ? fichier.getLibelle() : "document.pdf";
 
@@ -1058,6 +1053,8 @@ public ResponseEntity<byte[]> telechargerFichier(String idFichier, boolean downl
         } else {
             headers.setContentDisposition(ContentDisposition.inline().filename(nomFichier).build());
         }
+        headers.setContentDisposition(ContentDisposition.inline().filename(nomFichier).build());
+
 
         // 5. Construire la réponse HTTP complète
         return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);

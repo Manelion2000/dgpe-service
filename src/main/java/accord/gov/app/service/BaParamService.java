@@ -14,7 +14,7 @@ public interface BaParamService {
 
     BaTypeAccordDto getAccordById(final String id);
 
-    BaDocumentDto getById(String id);
+    BaDocumentDto getByDocumentById(String id);
 
     List<BaTypeAccordDto> getAlTypeAccord();
 

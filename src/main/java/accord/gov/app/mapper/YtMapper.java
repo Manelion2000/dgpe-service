@@ -34,7 +34,10 @@ public interface YtMapper {
             @Mapping(source = "domaines", target = "domaines"),
             @Mapping(source = "langues", target = "langues"),
             @Mapping(source = "parties", target = "parties"),
-            @Mapping(source = "typeDocument.id",target ="typeDocumentId")
+            @Mapping(source="fichiers",target = "fichiers"),
+            @Mapping(source = "documentAffilies",target = "documentAffilies"),
+            @Mapping(source = "typeDocument.id",target ="typeDocumentId"),
+            @Mapping(source = "typeDocument.libelle", target = "libelleTypeDocument")
     })
     BaDocumentDto maps(BaDocument entity);
 
@@ -61,6 +64,8 @@ public interface YtMapper {
      */
     @Mappings({
             @Mapping(source = "typeDocumentAffilie.id", target = "typeDocumentAffilieId"),
+            @Mapping(source = "typeDocumentAffilie.libelle", target = "libelleTypeAffilie"),
+            @Mapping(source = "fichiers", target = "fichiers"),
             @Mapping(source = "accord.id", target = "documentId")
     })
     BaDocumentAffilieDto maps(BaDocumentAffilie entity);

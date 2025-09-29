@@ -3,6 +3,7 @@ package accord.gov.app.controller;
 import accord.gov.app.dto.*;
 import accord.gov.app.enums.EConfidentiel;
 import accord.gov.app.enums.EStatut;
+import accord.gov.app.model.BaDocument;
 import accord.gov.app.model.BaDocumentAffilie;
 import accord.gov.app.model.BaFichier;
 import accord.gov.app.repositories.BaFichierRepository;
@@ -283,11 +284,11 @@ public class ParamController {
      * @return BaPartieDto
      */
     @PutMapping(BaConstants.URL.PARTIE + "/{id}")
-    public ResponseEntity<BaApiResponse<BaPartieDto>> updatePartie(
+    public ResponseEntity<BaPartieDto> updatePartie(
             @PathVariable final String id,
             @Valid @RequestBody final  BaPartieDto dto) {
         BaPartieDto updated = paramService.updatePartie(id, dto);
-        return ResponseEntity.ok(new BaApiResponse<>("Partie mise à jour avec succès", HttpStatus.OK.value(), updated));
+        return new ResponseEntity<>(updated, HttpStatus.OK);
     }
 
     /**
@@ -354,6 +355,18 @@ public class ParamController {
     @GetMapping(BaConstants.URL.DOCUMENT)
     public ResponseEntity<List<BaDocumentDto>> getAllDocActive(){
         return ResponseEntity.ok((paramService.getAllDocumentsByStatutAndConfidentialite(EStatut.A, EConfidentiel.NON)));
+    }
+
+    /**
+     * Fonction de récupération d’un document principale par son identifiant
+     * @param id: identifiant du document
+     * @return BaDocumentDto
+     */
+
+    @GetMapping(BaConstants.URL.DOCUMENT + "/{id}")
+    public ResponseEntity<BaDocumentDto> getDocumentById(@PathVariable String id) {
+        BaDocumentDto dto = paramService.getByDocumentById(id);
+        return ResponseEntity.ok(dto);
     }
     /**
      * Liste des documents actifs

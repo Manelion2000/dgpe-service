@@ -28,7 +28,7 @@ public class BaFileStorageService {
 
     @Value("${app.storage.path}")
     private String basePath;
-    private BaFichierRepository fichierRepository;
+    private final BaFichierRepository fichierRepository;
 
     /**
      * Récupérer le contenu d'un fichier.

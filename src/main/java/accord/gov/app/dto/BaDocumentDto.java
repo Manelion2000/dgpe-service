@@ -67,6 +67,8 @@ public class BaDocumentDto {
     @NotBlank(message = "L'identifiant du type de document est obligatoire.")
     private String typeDocumentId;
 
+    private String libelleTypeDocument;
+
     @NotEmpty(message = "Au moins une partie prenante doit être sélectionnée.")
     private Set<BaPartieDto> parties;
 
@@ -75,4 +77,8 @@ public class BaDocumentDto {
 
     @NotEmpty(message = "Au moins une langue prenante doit être sélectionnée.")
     private Set<BaLangueDto> langues;
+
+    private Set<BaDocumentAffilieDto> documentAffilies;
+    private Set<BaFichierDto> fichiers;
+
 }
