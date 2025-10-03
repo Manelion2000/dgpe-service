@@ -473,14 +473,15 @@ public class ParamController {
      * Supprime un fichier associé à un document (accord ou traité).
      *
      * @param fichierId l'ID du personnel.
-     * @param documentId l'ID du document.
      * @return l'objet BaPersonneDgpeDto mis à jour.
      */
-    @DeleteMapping(BaConstants.URL.DOCUMENT + "/documents/{documentId}/{fichierId}")
-    public ResponseEntity<BaDocumentDto> removeFichierFromDocument(@PathVariable final String documentId, @PathVariable final String fichierId) {
-        BaDocumentDto updatedDocument= paramService.removeFichierFromAccord(documentId, fichierId);
+    @DeleteMapping(BaConstants.URL.FICHIER + "/remove/{fichierId}")
+    public ResponseEntity<BaDocumentDto> removeFichierFromDocument(@PathVariable final String fichierId) {
+        BaDocumentDto updatedDocument= paramService.removeFichierFromAccord(fichierId);
         return ResponseEntity.ok(updatedDocument);
     }
+
+
 
     /**
      * 🔹 Recherche multicritère de documents
@@ -501,8 +502,22 @@ public class ParamController {
     }
 
     /**
+     * Recherche multicritère de documents
+     * @param request JSON contenant les critères de recherche
+     * @return liste de documents correspondant aux critères
+     */
+    @PostMapping(BaConstants.URL.DOCUMENT+"/search")
+    public ResponseEntity<List<BaDocumentDto>> searchDocument(
+            @RequestBody final BaDocumentSearchRequest request) {
+
+        List<BaDocumentDto> results = paramService.searchMulticritereNatifViaDto(request);
+
+        return ResponseEntity.ok(results);
+    }
+
+    /**
      * Endpoint pour visualiser ou télécharger un document d'autorisation spéciale.
-     * - Si `download=true`, le document est téléchargé.
+     * - Si `download=true, le document est téléchargé.
      * - Sinon, il est affiché dans le navigateur (visualisation PDF).
      * Exemple d'URL :
      * - Visualiser : GET /api/document/lecture/autorisation/{idDoc}
@@ -574,6 +589,21 @@ public class ParamController {
             @PathVariable String documentId) {
         List<BaDocumentAffilieDto> affilies = paramService.getAllAffiliesWithFiles(documentId);
         return ResponseEntity.ok(affilies);
+    }
+
+    //==============GESTION DES STATISTIQUES================
+    @GetMapping(BaConstants.URL.DOCUMENT+"/nature")
+    public ResponseEntity<List<BaStatistique>> getStatsByNature() {
+        return ResponseEntity.ok(paramService.getStatsByNature());
+    }
+
+    @GetMapping(BaConstants.URL.DOCUMENT+"/domaine")
+    public ResponseEntity<List<BaStatistique>> getStatsByDomaine() {
+        return ResponseEntity.ok(paramService.getStatsByDomaine());
+    }
+    @GetMapping(BaConstants.URL.DOCUMENT+"/partie")
+    public ResponseEntity<List<BaStatistique>> getStatsByPartie() {
+        return ResponseEntity.ok(paramService.getStatsByPartiePrenante());
     }
 
 

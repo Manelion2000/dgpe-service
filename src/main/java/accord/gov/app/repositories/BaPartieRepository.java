@@ -2,8 +2,10 @@ package accord.gov.app.repositories;
 
 import accord.gov.app.model.BaPartie;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -16,4 +18,8 @@ import java.util.Optional;
 @Repository
 public interface BaPartieRepository extends JpaRepository<BaPartie,String> {
     Optional<BaPartie> findByLibelle(String libelle);
+    long countByIdIn(List<String> ids);
+
+
+
 }

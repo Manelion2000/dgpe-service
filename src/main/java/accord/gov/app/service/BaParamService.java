@@ -86,20 +86,15 @@ public interface BaParamService {
 
     List<BaDocumentDto> getAllDocumentsByStatutAndConfidentialite(EStatut statut, EConfidentiel confidentiel);
 
-    List<BaDocumentDto> searchMulticritere(String typeId,
-                                           List<String> langueIds,
-                                           List<String> domaineIds,
-                                           List<String> partieIds,
-                                           List<String> motsCles,
-                                           String nature);
-
     List<BaDocumentDto> searchMulticritereViaDto(BaDocumentSearchRequest request);
 
     BaDocumentDto createDocumentP(BaDocumentDto dto, List<MultipartFile> files);
 
+    List<BaDocumentDto> searchMulticritereNatifViaDto(BaDocumentSearchRequest request);
+
     BaFichierDto saveFichierPrincipal(MultipartFile file, BaFichierDto fichierDto);
 
-    BaDocumentDto removeFichierFromAccord(String documentId, String fichierId);
+    BaDocumentDto removeFichierFromAccord(String fichierId);
 
     BaDocumentAffilieDto createDocumentAffilie(BaDocumentAffilieDto dto, MultipartFile file);
 
@@ -115,4 +110,10 @@ public interface BaParamService {
     byte[] readAllByteOfFichier(String idFichier);
 
     ResponseEntity<byte[]> telechargerFichier(String idFichier, boolean download);
+
+    List<BaStatistique> getStatsByNature();
+
+    List<BaStatistique> getStatsByDomaine();
+
+    List<BaStatistique> getStatsByPartiePrenante();
 }

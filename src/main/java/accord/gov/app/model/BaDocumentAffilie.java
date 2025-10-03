@@ -1,12 +1,15 @@
 package accord.gov.app.model;
 
+import accord.gov.app.enums.EStatut;
 import accord.gov.app.utils.BaUtils;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
@@ -18,7 +21,6 @@ import java.util.Set;
 @Entity
 @Getter
 @Setter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "ba_document_affilie")
@@ -65,5 +67,12 @@ public class BaDocumentAffilie extends BaAbstractAuditingEntity{
         fichiers.remove(fichier);
         fichier.setAccord(null);
     }
+
+    /*@Transient
+    public List<BaFichier> getFichiersActifs() {
+        return fichiers.stream()
+                .filter(p -> p.getStatut() == EStatut.A)
+                .collect(Collectors.toList());
+    }*/
 }
 

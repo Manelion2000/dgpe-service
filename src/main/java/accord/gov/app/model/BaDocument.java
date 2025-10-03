@@ -3,8 +3,10 @@ package accord.gov.app.model;
 import accord.gov.app.enums.EConfidentiel;
 import accord.gov.app.enums.EEtatEnVigeur;
 import accord.gov.app.enums.ENatureDocument;
+import accord.gov.app.enums.EStatut;
 import accord.gov.app.utils.BaUtils;
 import jakarta.persistence.*;
+import jakarta.persistence.criteria.Predicate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author : <A HREF="mailto:abdraman.bakouan@gmail.com">Abdramane BAKOUAN (ManeLion2000)</A>
@@ -39,7 +42,7 @@ public class BaDocument extends BaAbstractAuditingEntity {
     private String intitule;
 
     @Column(name = "note")
-    private String note;
+    private String cote;
 
     @Column(name = "mot_cle")
     private String motCle;
@@ -87,7 +90,7 @@ public class BaDocument extends BaAbstractAuditingEntity {
             joinColumns = @JoinColumn(name = "document_id"),
             inverseJoinColumns = @JoinColumn(name = "langue_id")
     )
-    private List<BaLangue> langues = new ArrayList<>();
+    private Set<BaLangue> langues = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
@@ -121,5 +124,7 @@ public class BaDocument extends BaAbstractAuditingEntity {
         fichiers.remove(fichier);
         fichier.setAccord(null);
     }
+
+
 }
 

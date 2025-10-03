@@ -15,6 +15,7 @@ public class BaConstants {
         public static final String PROFIL = "/profils";
         public static final String ROLE = "/roles";
         public static final String DOCUMENT = "/documents";
+        public static final String FICHIER = "/fichiers";
         public static final String DOCUMENT_AFF = "/affiliations";
         public static final String CSRF_TOKEN = "/csrf";
         public static final String AUTHENTICATE = "/authenticate";

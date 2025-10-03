@@ -3,10 +3,7 @@ package accord.gov.app.service.impl;
 
 import accord.gov.app.dto.*;
 import accord.gov.app.dto.BaFichierDto;
-import accord.gov.app.enums.EAction;
-import accord.gov.app.enums.EConfidentiel;
-import accord.gov.app.enums.EStatut;
-import accord.gov.app.enums.ETypeFichier;
+import accord.gov.app.enums.*;
 import accord.gov.app.mapper.YtMapper;
 import accord.gov.app.model.*;
 import accord.gov.app.repositories.*;
@@ -19,6 +16,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.factory.Mappers;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,9 +27,11 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;;
 
 
@@ -39,7 +40,8 @@ import java.util.stream.Collectors;;
 @Slf4j
 @Service
 public class BaParamServiceImpl implements BaParamService {
-
+    @Value("${app.storage.path}")
+    private String basePath;
     private final YtMapper mapper = Mappers.getMapper(YtMapper.class);
     private final BaLogService logService;
     private final BaFileStorageService fileStorageService;
@@ -51,6 +53,7 @@ public class BaParamServiceImpl implements BaParamService {
     private final BaDocumentRepository documentRepository;
     private final BaDocumentAffilieRepository documentAffilieRepository;
     private final BaFichierRepository fichierRepository;
+    private final BaDocumentSpecification specification;
 
     /**
      * Crée un nouveau type d'accord (valable aussi pour les traités)
@@ -529,7 +532,7 @@ public class BaParamServiceImpl implements BaParamService {
         if (files != null && !files.isEmpty()) {
             for (MultipartFile file : files) {
                 String savedFileName = fileStorageService.saveFileDocumentPDF(file);
-                buildAndAttachFile(file, savedFileName, entity, null); // Accord non null
+                buildAndAttachFile(file, savedFileName, entity); // Accord non null
             }
         }
 
@@ -546,8 +549,8 @@ public class BaParamServiceImpl implements BaParamService {
      * @param documentId: identifiant de document
      * @param newFiles: nouveau fichier
      * @param filesToDelete: fichier à supprimer
-     * @return
-     * @throws IOException
+     * @return un Dto de document
+     * @throws IOException: une exception à lever
      */
     @Override
     public BaDocumentDto updateDocumentWithFiles(String documentId,
@@ -601,7 +604,7 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Document introuvable"));
 
     entity.setIntitule(dto.getIntitule());
-    entity.setNote(dto.getCote());
+    entity.setCote(dto.getCote());
     entity.setMotCle(dto.getMotCle());
     entity.setResume(dto.getResume());
     entity.setCodeBoite(dto.getCodeBoite());
@@ -641,6 +644,28 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
         return mapper.maps(entity);
     }
 
+    /**
+     * la liste des documents entre deux dates
+     * @param startDate: date de debut
+     * @param endDate; date de fin
+     * @return une liste de documents
+     */
+
+    public List<BaDocumentDto> getDocumentsByDateSignature(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("Les deux dates doivent être renseignées.");
+        }
+        if (endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("La date de fin doit être supérieure ou égale à la date de début.");
+        }
+        List<BaDocument> liste=documentRepository.findByDateSignatureBetween(startDate, endDate);
+
+        return liste
+                .stream()
+                .map(mapper::maps)
+                .collect(Collectors.toList());
+    }
+
     @Override
     public List<BaDocumentDto> getAllDocument() {
         List<BaDocument> list = documentRepository.findAll();
@@ -664,36 +689,6 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
         return list.stream().map(mapper::maps).collect(Collectors.toList());
     }
 
-
-    @Override
-    public List<BaDocumentDto> searchMulticritere(String typeId,
-                                      List<String> langueIds,
-                                      List<String> domaineIds,
-                                      List<String> partieIds,
-                                      List<String> motsCles,
-                                      String nature) {
-
-        // Utilisation de la specification pour filtrer
-        List<BaDocument> results = documentRepository.findAll(
-                BaDocumentSpecification.filter(
-                        typeId,
-                        langueIds,
-                        domaineIds,
-                        partieIds,
-                        motsCles,
-                        nature
-                )
-        );
-
-        // Log de la recherche
-        logService.log(new BaLogDto(EAction.VIEW, "Recherche multicritère de documents"));
-
-        // Transformation en DTO
-        return results.stream()
-                .map(mapper::maps)
-                .collect(Collectors.toList());
-    }
-
     /**
      * Recherche multicritère via Dto Service
      * @param request : request de la Dto
@@ -702,26 +697,140 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
     @Override
     public List<BaDocumentDto> searchMulticritereViaDto(BaDocumentSearchRequest request) {
 
+        // Vérifier les langues
+        if (request.getLangueIds() != null && !request.getLangueIds().isEmpty()) {
+            List<String> validLangues = documentRepository.findExistingLangueIds(request.getLangueIds());
+            if (validLangues.isEmpty()) return Collections.emptyList();
+            request.setLangueIds(validLangues);
+        }
 
-        // Utilisation de la specification pour filtrer
-        List<BaDocument> results = documentRepository.findAll(
-                BaDocumentSpecification.filter(
-                        request.getTypeId(),
-                        request.getLangueIds(),
-                        request.getDomaines(),
-                        request.getParties(),
-                        request.getKeywords(),
-                        request.getNature()
-                )
+        // Vérifier les domaines
+        if (request.getDomaines() != null && !request.getDomaines().isEmpty()) {
+            List<String> validDomaines = documentRepository.findExistingDomaineIds(request.getDomaines());
+            if (validDomaines.isEmpty()) return Collections.emptyList();
+            request.setDomaines(validDomaines);
+        }
+
+        // Vérifier les parties prenantes
+        if (request.getParties() != null && !request.getParties().isEmpty()) {
+            List<String> validParties = documentRepository.findExistingPartieIds(request.getParties());
+            if (validParties.isEmpty()) return Collections.emptyList();
+            request.setParties(validParties);
+        }
+
+        // 2️⃣ Construction de la specification
+        Specification<BaDocument> spec = Specification.allOf(
+                BaDocumentSpecification.byTypeAccord(request.getTypeId()),
+                BaDocumentSpecification.byLangues(request.getLangueIds()),
+                BaDocumentSpecification.byDomaines(request.getDomaines()),
+                BaDocumentSpecification.byParties(request.getParties()),
+                BaDocumentSpecification.byMotsCles(request.getKeywords()),
+                BaDocumentSpecification.byNature(request.getNature())
         );
 
-        // Log de la recherche
-        logService.log(new BaLogDto(EAction.VIEW, "Recherche multicritère de documents via DTO"));
+        // 3️⃣ Exécution de la recherche
+        List<BaDocument> results = documentRepository.findAll(spec);
 
-        // Transformation en DTO
-        return results.stream()
-                .map(mapper::maps)
-                .collect(Collectors.toList());
+        // 4️⃣ Logging
+        logService.log(new BaLogDto(EAction.VIEW, "Recherche multicritère via specs atomiques"));
+
+        // 5️⃣ Transformation en DTO
+        return results.stream().map(mapper::maps).toList();
+    }
+
+    public List<BaDocumentDto> searchDocumentsStrict(BaDocumentFilterDto filterDto) {
+
+        Map<String, Object> raw = filterDto.getRawFilters();
+
+        String typeDocumentId = (String) raw.get("typeDocumentId");
+
+
+// Ensuite dans ton code :
+        List<String> langues = safeCastList(raw.get("langues"));
+        List<String> domaines = safeCastList(raw.get("domaines"));
+        List<String> parties = safeCastList(raw.get("parties"));
+        List<String> keywords = safeCastList(raw.get("keywords"));
+        ENatureDocument nature = null;
+        try {
+            if (raw.get("natureDocument") != null)
+                nature = ENatureDocument.valueOf(raw.get("natureDocument").toString().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return Collections.emptyList(); // champ enum invalide
+        }
+
+        // Vérification stricte des IDs
+        if (!langues.isEmpty() && langueRepository.countByIdIn(langues) != langues.size()) {
+            return Collections.emptyList(); // certains IDs de langue inexistants
+        }
+        if (!domaines.isEmpty() && domaineRepository.countByIdIn(domaines) != domaines.size()) {
+            return Collections.emptyList(); // certains IDs de domaine inexistants
+        }
+        if (!parties.isEmpty() && partieRepository.countByIdIn(parties) != parties.size()) {
+            return Collections.emptyList(); // certains IDs de partie inexistants
+        }
+
+        // Création de la specification
+        Specification<BaDocument> spec = Specification.allOf(
+                BaDocumentSpecification.byTypeAccord(typeDocumentId),
+                BaDocumentSpecification.byLangues(langues),
+                BaDocumentSpecification.byDomaines(domaines),
+                BaDocumentSpecification.byParties(parties),
+                BaDocumentSpecification.byMotsCles(keywords),
+                BaDocumentSpecification.byNature(nature)
+        );
+
+        List<BaDocument> results = documentRepository.findAll(spec);
+        return results.stream().map(mapper::maps).toList();
+    }
+    @SuppressWarnings("unchecked")
+    private List<String> safeCastList(Object obj) {
+        if (obj instanceof List<?>) {
+            return ((List<?>) obj).stream()
+                    .filter(Objects::nonNull)
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .collect(Collectors.toList());
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Recherche ene utilisant le sql natif
+     * @param request: le dto de la recherche
+     * @return une liste de document Dto
+     */
+
+    @Override
+    public List<BaDocumentDto> searchMulticritereNatifViaDto(BaDocumentSearchRequest request) {
+
+        // Préparer les keywords pour SQL LIKE
+        List<String> keywords = null;
+        if (request.getKeywords() != null && !request.getKeywords().isEmpty()) {
+            keywords = request.getKeywords().stream()
+                    .map(k -> "%" + k.toLowerCase() + "%")
+                    .toList();
+        }
+
+        // Conversion de la nature en String
+        String nature = request.getNature() != null ? request.getNature().name() : null;
+
+        // Vérification stricte : si une liste d’ID est fournie mais vide, retourner zéro résultat
+        if ((request.getLangueIds() != null && request.getLangueIds().isEmpty())
+                || (request.getDomaines() != null && request.getDomaines().isEmpty())
+                || (request.getParties() != null && request.getParties().isEmpty())) {
+            return List.of(); // pas de résultat si filtre fourni mais vide
+        }
+
+        List<BaDocument> results = documentRepository.searchDocuments(
+                request.getTypeId(),
+                nature,
+                request.getLangueIds(),
+                request.getDomaines(),
+                request.getParties(),
+                keywords
+        );
+
+        return results.stream().map(mapper::maps).toList();
     }
 
 
@@ -740,24 +849,34 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le fichier est vide ou manquant.");
         }
 
-        // 2. Sauvegarde physique du fichier sur le disque (ou stockage cloud)
-        String nomUnique = fileStorageService.saveFileDocumentPDF(file);
-
-        // 3. Vérification de l'ID du document
-        if (fichierDto.getDocumentId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'ID du document est obligatoire.");
+        // 2. Vérification de l'ID obligatoire
+        if (fichierDto.getDocumentId() == null && fichierDto.getAffilieId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un ID (document ou affilié) est obligatoire.");
         }
 
-        // 4. Récupération du document parent
-        BaDocument doc = documentRepository.findById(fichierDto.getDocumentId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable."));
+        // 3. Sauvegarde physique
+        String nomUnique = fileStorageService.saveFileDocumentPDF(file);
 
-        // 5. Création de l'entité BaFichier à partir du DTO
+        // 4. Création de l'entité
         BaFichier baFichier = mapper.maps(fichierDto);
-        baFichier.setId(BaUtils.randomUUID());   // UUID unique
-        baFichier.setAccord(doc);                // lien avec le document
-        baFichier.setUrl(nomUnique);             // chemin/nom du fichier sauvegardé
-        baFichier.setLibelle(file.getOriginalFilename()); // nom original pour info utilisateur
+        baFichier.setId(BaUtils.randomUUID());
+        baFichier.setUrl(nomUnique);
+        baFichier.setLibelle(file.getOriginalFilename());
+
+        // 5. Association selon le type de parent
+        if (fichierDto.getDocumentId() != null) {
+            BaDocument doc = documentRepository.findById(fichierDto.getDocumentId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable."));
+            baFichier.setAccord(doc);
+            baFichier.setType(ETypeFichier.PRINCIPAL);
+            baFichier.setAffilie(null);
+        } else {
+            BaDocumentAffilie docAffilie = documentAffilieRepository.findById(fichierDto.getAffilieId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document affilié introuvable."));
+            baFichier.setAffilie(docAffilie);
+            baFichier.setType(ETypeFichier.AFFILIE);
+            baFichier.setAccord(null);
+        }
 
         // 6. Sauvegarde en base
         BaFichier saved = fichierRepository.save(baFichier);
@@ -765,39 +884,88 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
         // 7. Retour DTO
         return mapper.maps(saved);
     }
+
     /**
      * Supprime un fichier principal d'un traité ou accord.
      * @param fichierId: identifiant du personnel
-     * @param documentId: identifiant du document
      */
     @Override
-    public BaDocumentDto removeFichierFromAccord(String documentId, String fichierId) {
-        // Vérifier l'existence du document
-        BaDocument doc = documentRepository.findById(documentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "le personnel est introuvable avec l'ID fourni."));;
-
-        // Vérifier l'existence du document
+    @Transactional
+    public BaDocumentDto removeFichierFromAccord(String fichierId) {
+        // Vérifier l'existence du fichier
         BaFichier fichier = fichierRepository.findById(fichierId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Fichier introuvable avec l'ID fourni."));
 
-        // Vérifier que le fichier est associé à un document(traité ou accord)
-        if (!doc.getFichiers().contains(fichier)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le fichier n'est pas associé à ce document");
+        BaDocument document = null;
+
+        // Vérifier si le fichier est rattaché à un document principal
+        if (fichier.getAccord() != null) {
+            document = documentRepository.findById(fichier.getAccord().getId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST, "Le document principal lié à ce fichier est introuvable."));
+
+            if (!document.getFichiers().contains(fichier)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Le fichier n'est pas associé au document principal.");
+            }
+
+            // Retirer le fichier de la collection
+            document.getFichiers().remove(fichier);
         }
 
-        // Supprimer le fichier de l'ensemble des documents
-        doc.getFichiers().remove(fichier);
+        // Vérifier si le fichier est rattaché à un document affilié
+        else if (fichier.getAffilie() != null) {
+            BaDocumentAffilie documentAffilie = documentAffilieRepository.findById(fichier.getAffilie().getId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST, "Le document affilié lié à ce fichier est introuvable."));
 
-        // Supprimer le document de la base de données si nécessaire
+            if (!documentAffilie.getFichiers().contains(fichier)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Le fichier n'est pas associé au document affilié.");
+            }
+
+            // Retirer le fichier
+            documentAffilie.getFichiers().remove(fichier);
+            documentAffilieRepository.save(documentAffilie);
+        }
+
+        else {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Le fichier n'est rattaché ni à un document principal ni à un document affilié.");
+        }
+
+        // ➡️ Supprimer le fichier physique sur disque AVANT suppression en base
+        deletePhysicalFile(fichier.getUrl());
+
+        // Supprimer l’entrée en base
         fichierRepository.delete(fichier);
 
-        // Sauvegarder le personnel mise à jour
-        BaDocument dc=documentRepository.save(doc);
+        // Sauvegarder le document principal si trouvé
+        if (document != null) {
+            BaDocument updatedDoc = documentRepository.save(document);
+            return mapper.maps(updatedDoc);
+        }
 
-        logService.log(new BaLogDto(EAction.DELETE, "Suppression d'un document " + documentId + " d'un accord " + documentId));
-        return mapper.maps(dc);
-
+        return null;
     }
+
+    /**
+     * Supprime le fichier physique du répertoire.
+     */
+    private void deletePhysicalFile(String fileName) {
+        if (fileName == null) return;
+
+        try {
+            Path filePath = Paths.get(basePath).toAbsolutePath().normalize().resolve(fileName);
+            Files.deleteIfExists(filePath); // supprime seulement si le fichier existe
+        } catch (IOException e) {
+            // Log erreur, mais ne pas bloquer la transaction DB
+            log.error("Impossible de supprimer le fichier physique : " + fileName, e);
+        }
+    }
+
+
     //===============GESTION DES DOCUMENTS AFFILIES=============
     /**
      * Crée un nouveau traité ou accord.
@@ -933,14 +1101,14 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
 
     /**
      * Fonction utilitaire pour la création des documents et documents affiliés
-     * @param file: fichier à téléverser
-     * @param savedFileName: le nom du nom à retourner
-     * @param accord: le
-     * @param affilie
+     *
+     * @param file          : fichier à téléverser
+     * @param savedFileName : le nom du nom à retourner
+     * @param accord        : le
      */
 
     private void buildAndAttachFile(MultipartFile file, String savedFileName,
-                                    BaDocument accord, BaDocumentAffilie affilie) {
+                                    BaDocument accord) {
         ETypeFichier type = (accord != null) ? ETypeFichier.PRINCIPAL : ETypeFichier.AFFILIE;
 
         BaFichier fichier = BaFichier.builder()
@@ -949,13 +1117,11 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
                 .url(savedFileName)
                 .type(type)
                 .accord(accord)
-                .affilie(affilie)
+                .affilie(null)
                 .build();
 
         if (accord != null) {
             accord.getFichiers().add(fichier);
-        } else if (affilie != null) {
-            affilie.getFichiers().add(fichier);
         }
 
     }
@@ -1060,4 +1226,75 @@ public ResponseEntity<byte[]> telechargerFichier(String idFichier, boolean downl
         return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
     }
 
+    /**
+     * Statistique par Nature de document
+     * @return: un objet de BaNatureStatistiqueDto
+     */
+    /**
+     * Statistiques par nature de document
+     */
+    @Override
+    public List<BaStatistique> getStatsByNature() {
+        List<Object[]> results = documentRepository.countByNatureDocument();
+
+        // mettre en map {nature -> count}
+        Map<ENatureDocument, Long> counts = results.stream()
+                .collect(Collectors.toMap(
+                        obj -> (ENatureDocument) obj[0],
+                        obj -> (Long) obj[1]
+                ));
+
+        // retourner toutes les valeurs possibles de l'enum
+        return Arrays.stream(ENatureDocument.values())
+                .map(nature -> new BaStatistique(
+                        nature.name(),
+                        counts.getOrDefault(nature, 0L) // si absent → 0
+                ))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Statistiques par domaine
+     */
+    @Override
+    public List<BaStatistique> getStatsByDomaine() {
+        List<Object[]> results = documentRepository.countByDomaine();
+
+        Map<String, Long> counts = results.stream()
+                .collect(Collectors.toMap(
+                        obj -> (String) obj[0],
+                        obj -> (Long) obj[1]
+                ));
+
+        // On récupère TOUS les domaines existants
+        return domaineRepository.findAll().stream()
+                .map(d -> new BaStatistique(
+                        d.getLibelle(),
+                        counts.getOrDefault(d.getLibelle(), 0L)
+                ))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Statistiques par partie prenante
+     */
+    @Override
+    public List<BaStatistique> getStatsByPartiePrenante() {
+        List<Object[]> results = documentRepository.countByPartiePrenante();
+
+        Map<String, Long> counts = results.stream()
+                .collect(Collectors.toMap(
+                        obj -> (String) obj[0],
+                        obj -> (Long) obj[1]
+                ));
+
+        // On récupère TOUTES les parties prenantes
+        return partieRepository.findAll().stream()
+                .map(p -> new BaStatistique(
+                        p.getLibelle(),
+                        counts.getOrDefault(p.getLibelle(), 0L)
+                ))
+                .collect(Collectors.toList());
+    }
 }
+

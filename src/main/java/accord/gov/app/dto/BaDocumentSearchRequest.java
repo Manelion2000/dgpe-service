@@ -1,7 +1,10 @@
 package accord.gov.app.dto;
 
+import accord.gov.app.enums.ENatureDocument;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -18,10 +21,14 @@ import java.util.List;
 @AllArgsConstructor
 public class BaDocumentSearchRequest {
 
-    private String typeId;             // ex: "bilateral"
-    private String nature;             // ex: "traite"
-    private List<String> langueIds;    // ex:["francais","russ"]
-    private List<String> parties;      // ex: ["Burkina Faso", "Iran"]
-    private List<String> domaines;     // ex: ["sécurité", "militaire"]
-    private List<String> keywords;     // ex: ["coopération", "défense"] au niveau de l'intitulé
+    private String typeId; // ID du type de document
+
+    // Pour la nature, on utilise un Enum et on ajoute @JsonDeserialize
+    @JsonDeserialize(using = ENatureDocumentDeserializer.class)
+    private ENatureDocument nature;
+
+    private List<String> langueIds = new ArrayList<>();
+    private List<String> parties = new ArrayList<>();
+    private List<String> domaines = new ArrayList<>();
+    private List<String> keywords = new ArrayList<>();
 }
