@@ -92,6 +92,10 @@ public interface BaParamService {
 
     List<BaDocumentDto> searchMulticritereNatifViaDto(BaDocumentSearchRequest request);
 
+    List<BaDocumentDto> searchMulticritereNatifLargeViaDto(BaDocumentSearchRequest request);
+
+    List<BaDocumentDto> searchMulticritereNatifMixteViaDto(BaDocumentSearchRequest request);
+
     BaFichierDto saveFichierPrincipal(MultipartFile file, BaFichierDto fichierDto);
 
     BaDocumentDto removeFichierFromAccord(String fichierId);

@@ -58,28 +58,107 @@ public interface BaDocumentRepository extends JpaRepository<BaDocument, String>,
     List<String> findExistingPartieIds(@Param("ids") List<String> ids);
 
     @Query(value = """
-        SELECT DISTINCT d.*
-        FROM ba_document d
-        LEFT JOIN ba_document_langue dl ON d.id = dl.document_id
-        LEFT JOIN ba_document_domaine dd ON d.id = dd.document_id
-        LEFT JOIN ba_document_partie dp ON d.id = dp.document_id
-        WHERE (:typeId IS NULL OR d.type_document_id = :typeId)
-          AND (:nature IS NULL OR d.nature_document = :nature)
-          AND (:langueIds IS NULL OR dl.langue_id IN :langueIds)
-          AND (:domaineIds IS NULL OR dd.domaine_id IN :domaineIds)
-          AND (:partieIds IS NULL OR dp.partie_id IN :partieIds)
-          AND (:keywords IS NULL OR 
-                LOWER(d.intitule) LIKE ANY (:keywords) OR
-                LOWER(d.mot_cle) LIKE ANY (:keywords) OR
-                LOWER(d.resume) LIKE ANY (:keywords))
-        """, nativeQuery = true)
-    List<BaDocument> searchDocuments(
+            SELECT DISTINCT d.*
+                FROM ba_document d
+                LEFT JOIN ba_document_langue dl ON d.id = dl.document_id
+                LEFT JOIN ba_document_domaine dd ON d.id = dd.document_id
+                LEFT JOIN ba_document_partie dp ON d.id = dp.document_id
+                WHERE (:typeId IS NULL OR d.type_document_id = CAST(:typeId AS text))
+                  AND (:nature IS NULL OR d.nature_document = :nature)
+                  AND (array_length(CAST(:langueIds AS text[]), 1) IS NULL OR dl.langue_id = ANY(CAST(:langueIds AS text[])))
+                  AND (array_length(CAST(:domaineIds AS text[]), 1) IS NULL OR dd.domaine_id = ANY(CAST(:domaineIds AS text[])))
+                  AND (array_length(CAST(:partieIds AS text[]), 1) IS NULL OR dp.partie_id = ANY(CAST(:partieIds AS text[])))
+                  AND (array_length(CAST(:keywords AS text[]), 1) IS NULL OR (
+                        unaccent(LOWER(d.mot_cle)) LIKE ANY(CAST(:keywords AS text[]))
+                        OR unaccent(LOWER(d.resume)) LIKE ANY(CAST(:keywords AS text[]))
+                  ))
+    """, nativeQuery = true)
+    List<BaDocument> searchDocumentStrict(
             @Param("typeId") String typeId,
             @Param("nature") String nature,
-            @Param("langueIds") List<String> langueIds,
-            @Param("domaineIds") List<String> domaineIds,
-            @Param("partieIds") List<String> partieIds,
-            @Param("keywords") List<String> keywords
+            @Param("langueIds") String[] langueIds,
+            @Param("domaineIds") String[] domaineIds,
+            @Param("partieIds") String[] partieIds,
+            @Param("keywords") String[] keywords
     );
+
+
+    @Query(value = """
+            SELECT DISTINCT d.*
+                FROM ba_document d
+                LEFT JOIN ba_document_langue dl ON d.id = dl.document_id
+                LEFT JOIN ba_document_domaine dd ON d.id = dd.document_id
+                LEFT JOIN ba_document_partie dp ON d.id = dp.document_id
+                WHERE (:typeId IS NULL OR d.type_document_id = CAST(:typeId AS text))
+                  AND (:nature IS NULL OR d.nature_document = :nature)
+                  AND (array_length(CAST(:langueIds AS text[]), 1) IS NULL OR dl.langue_id = ANY(CAST(:langueIds AS text[])))
+                  AND (array_length(CAST(:domaineIds AS text[]), 1) IS NULL OR dd.domaine_id = ANY(CAST(:domaineIds AS text[])))
+                  AND (array_length(CAST(:partieIds AS text[]), 1) IS NULL OR dp.partie_id = ANY(CAST(:partieIds AS text[])))
+                  AND (array_length(CAST(:keywords AS text[]), 1) IS NULL OR (
+                        unaccent(LOWER(d.mot_cle)) LIKE ANY(CAST(:keywords AS text[]))
+                        OR unaccent(LOWER(d.resume)) LIKE ANY(CAST(:keywords AS text[]))
+                  ))
+    """, nativeQuery = true)
+    List<BaDocument> searchDocumentLarge(
+            @Param("typeId") String typeId,
+            @Param("nature") String nature,
+            @Param("langueIds") String[] langueIds,
+            @Param("domaineIds") String[] domaineIds,
+            @Param("partieIds") String[] partieIds,
+            @Param("keywords") String[] keywords
+    );
+
+    /**
+     *
+     * @param typeId: type d'accord ou de traité (son Id): obligatoire
+     * @param nature: la nature du document : obligatoire
+     * @param langueIds: id de langues( ids des langues)
+     * @param domaineIds: id des domaines
+     * @param partieIds: id de partie prénante: obligatoire et vraie
+     * @param keywords: mots clés
+     * @return : liste des documents
+     */
+    @Query(value = """
+    SELECT DISTINCT d.*
+    FROM ba_document d
+    LEFT JOIN ba_document_langue dl ON d.id = dl.document_id
+    LEFT JOIN ba_document_domaine dd ON d.id = dd.document_id
+    LEFT JOIN ba_document_partie dp ON d.id = dp.document_id
+    WHERE 
+          -- Partie stricte (AND)
+          (:typeId IS NULL OR d.type_document_id = CAST(:typeId AS text))
+      AND (:nature IS NULL OR d.nature_document = :nature)
+      AND dp.partie_id = ANY(CAST(:partieIds AS text[]))
+
+          -- Partie large (OR)
+      AND (
+            (array_length(CAST(:langueIds AS text[]), 1) IS NULL 
+             AND array_length(CAST(:domaineIds AS text[]), 1) IS NULL 
+             AND array_length(CAST(:keywords AS text[]), 1) IS NULL
+            )
+         OR (array_length(CAST(:langueIds AS text[]), 1) IS NOT NULL 
+                AND dl.langue_id = ANY(CAST(:langueIds AS text[])))
+         OR (array_length(CAST(:domaineIds AS text[]), 1) IS NOT NULL 
+                AND dd.domaine_id = ANY(CAST(:domaineIds AS text[])))
+         OR (array_length(CAST(:partieIds AS text[]), 1) IS NOT NULL 
+                AND dp.partie_id = ANY(CAST(:partieIds AS text[])))
+         OR (array_length(CAST(:keywords AS text[]), 1) IS NOT NULL AND (
+                unaccent(LOWER(d.mot_cle)) LIKE ANY(CAST(:keywords AS text[]))
+             OR unaccent(LOWER(d.resume)) LIKE ANY(CAST(:keywords AS text[]))
+            ))
+      )
+    """, nativeQuery = true)
+    List<BaDocument> searchDocumentsMixte(
+            @Param("typeId") String typeId,
+            @Param("nature") String nature,
+            @Param("partieIds") String[] partieIds,
+            @Param("langueIds") String[] langueIds,
+            @Param("domaineIds") String[] domaineIds,
+            @Param("keywords") String[] keywords
+    );
+
+
+
+
 
 }

@@ -804,34 +804,113 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
     public List<BaDocumentDto> searchMulticritereNatifViaDto(BaDocumentSearchRequest request) {
 
         // Préparer les keywords pour SQL LIKE
-        List<String> keywords = null;
+        String[] keywords = null;
         if (request.getKeywords() != null && !request.getKeywords().isEmpty()) {
             keywords = request.getKeywords().stream()
                     .map(k -> "%" + k.toLowerCase() + "%")
-                    .toList();
+                    .toArray(String[]::new);
         }
 
-        // Conversion de la nature en String
+        // Conversion des listes en tableaux pour PostgreSQL
+        String[] langues = request.getLangueIds() != null && !request.getLangueIds().isEmpty()
+                ? request.getLangueIds().toArray(new String[0]) : null;
+
+        String[] domaines = request.getDomaines() != null && !request.getDomaines().isEmpty()
+                ? request.getDomaines().toArray(new String[0]) : null;
+
+        String[] parties = request.getParties() != null && !request.getParties().isEmpty()
+                ? request.getParties().toArray(new String[0]) : null;
+
         String nature = request.getNature() != null ? request.getNature().name() : null;
 
-        // Vérification stricte : si une liste d’ID est fournie mais vide, retourner zéro résultat
-        if ((request.getLangueIds() != null && request.getLangueIds().isEmpty())
-                || (request.getDomaines() != null && request.getDomaines().isEmpty())
-                || (request.getParties() != null && request.getParties().isEmpty())) {
-            return List.of(); // pas de résultat si filtre fourni mais vide
-        }
-
-        List<BaDocument> results = documentRepository.searchDocuments(
+        List<BaDocument> results = documentRepository.searchDocumentStrict(
                 request.getTypeId(),
                 nature,
-                request.getLangueIds(),
-                request.getDomaines(),
-                request.getParties(),
+                langues,
+                domaines,
+                parties,
                 keywords
         );
 
         return results.stream().map(mapper::maps).toList();
     }
+
+    @Override
+    public List<BaDocumentDto> searchMulticritereNatifLargeViaDto(BaDocumentSearchRequest request) {
+
+        // Préparer les keywords pour SQL LIKE
+        String[] keywords = null;
+        if (request.getKeywords() != null && !request.getKeywords().isEmpty()) {
+            keywords = request.getKeywords().stream()
+                    .map(k -> "%" + k.toLowerCase() + "%")
+                    .toArray(String[]::new);
+        }
+
+        // Conversion des listes en tableaux pour PostgreSQL
+        String[] langues = request.getLangueIds() != null && !request.getLangueIds().isEmpty()
+                ? request.getLangueIds().toArray(new String[0]) : null;
+
+        String[] domaines = request.getDomaines() != null && !request.getDomaines().isEmpty()
+                ? request.getDomaines().toArray(new String[0]) : null;
+
+        String[] parties = request.getParties() != null && !request.getParties().isEmpty()
+                ? request.getParties().toArray(new String[0]) : null;
+
+        String nature = request.getNature() != null ? request.getNature().name() : null;
+
+        List<BaDocument> results = documentRepository.searchDocumentLarge(
+                request.getTypeId(),
+                nature,
+                langues,
+                domaines,
+                parties,
+                keywords
+        );
+
+        return results.stream().map(mapper::maps).toList();
+    }
+
+    /**
+     * Recherche obligatoire( Nature, type, domaine)
+     * @param request: Dto
+     * @return une liste de documents
+     */
+
+    @Override
+    public List<BaDocumentDto> searchMulticritereNatifMixteViaDto(BaDocumentSearchRequest request) {
+
+        // Préparer les keywords pour SQL LIKE
+        String[] keywords = null;
+        if (request.getKeywords() != null && !request.getKeywords().isEmpty()) {
+            keywords = request.getKeywords().stream()
+                    .map(k -> "%" + k.toLowerCase() + "%")
+                    .toArray(String[]::new);
+        }
+
+        // Conversion des listes en tableaux pour PostgreSQL
+        String[] langueIds = request.getLangueIds() != null && !request.getLangueIds().isEmpty()
+                ? request.getLangueIds().toArray(new String[0]) : null;
+
+        String[] domaines = request.getDomaines() != null && !request.getDomaines().isEmpty()
+                ? request.getDomaines().toArray(new String[0]) : null;
+
+        String[] parties = request.getParties() != null && !request.getParties().isEmpty()
+                ? request.getParties().toArray(new String[0]) : null;
+
+        String nature = request.getNature() != null ? request.getNature().name() : null;
+
+        List<BaDocument> results = documentRepository.searchDocumentsMixte(
+                request.getTypeId(),
+                nature,
+                parties,
+                langueIds,
+                domaines,
+                keywords
+        );
+
+        return results.stream().map(mapper::maps).toList();
+    }
+
 
 
     //===============================GESTION DES FICHIERS=====================

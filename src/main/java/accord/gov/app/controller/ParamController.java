@@ -502,7 +502,7 @@ public class ParamController {
     }
 
     /**
-     * Recherche multicritère de documents
+     * Recherche multicritère de documents (Recherche Stricte)
      * @param request JSON contenant les critères de recherche
      * @return liste de documents correspondant aux critères
      */
@@ -511,6 +511,27 @@ public class ParamController {
             @RequestBody final BaDocumentSearchRequest request) {
 
         List<BaDocumentDto> results = paramService.searchMulticritereNatifViaDto(request);
+
+        return ResponseEntity.ok(results);
+    }
+    /**
+     * Recherche multicritère de documents (Recherche Stricte)
+     * @param request JSON contenant les critères de recherche
+     * @return liste de documents correspondant aux critères
+     */
+    @PostMapping(BaConstants.URL.DOCUMENT+"/large/search")
+    public ResponseEntity<List<BaDocumentDto>> searchDocumentLarge(
+            @RequestBody final BaDocumentSearchRequest request) {
+
+        List<BaDocumentDto> results = paramService.searchMulticritereNatifLargeViaDto(request);
+
+        return ResponseEntity.ok(results);
+    }
+    @PostMapping(BaConstants.URL.DOCUMENT+"/mixte/search")
+    public ResponseEntity<List<BaDocumentDto>> searchDocumentMixte(
+            @RequestBody final BaDocumentSearchRequest request) {
+
+        List<BaDocumentDto> results = paramService.searchMulticritereNatifMixteViaDto(request);
 
         return ResponseEntity.ok(results);
     }
