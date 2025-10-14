@@ -12,6 +12,7 @@ import accord.gov.app.repositories.BaUserRepository;
 import accord.gov.app.service.BaLogService;
 import accord.gov.app.service.BaMailService;
 import accord.gov.app.utils.BaUtils;
+import accord.gov.app.utils.BaVerificateurPassword;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.factory.Mappers;
@@ -30,6 +31,8 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -47,6 +50,7 @@ public class BaUserService {
     private final PasswordEncoder passwordEncoder;
     private final BaLogService logService;
     private final BaMailService mailService;
+    private final Executor taskExecutor;
 
 
     /**
@@ -73,39 +77,60 @@ public class BaUserService {
     public BaUserDto createUser(final BaUserDto uDto) {
         log.info("Création d'un compte utilisateur.");
         logService.log(new BaLogDto(EAction.CREATE, "Utilisateurs : " + uDto.getUsername()));
+
         // Assigner l'email comme nom d'utilisateur
         uDto.setUsername(uDto.getEmail());
 
-        if (this.userRepository.existsByUsernameIgnoreCase(uDto.getUsername())) {
+        // Vérifications d'unicité
+        if (userRepository.existsByUsernameIgnoreCase(uDto.getUsername())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le nom d'utilisateur est déjà occupé.");
         }
-
-        if (this.userRepository.existsByTelephoneIgnoreCase(uDto.getTelephone())) {
+        if (userRepository.existsByTelephoneIgnoreCase(uDto.getTelephone())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le numéro de téléphone est déjà utilisé.");
         }
-
-        if (uDto.getEmail() != null && this.userRepository.existsByEmailIgnoreCase(uDto.getEmail())) {
+        if (uDto.getEmail() != null && userRepository.existsByEmailIgnoreCase(uDto.getEmail())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'email est déjà utilisé.");
         }
 
-//        if (uDto.getCredentials() == null || BaUtils.isEmpty(uDto.getCredentials().getPassword())) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vous devez fournir le mot de passe");
-//        }
+        // Récupération des profils par défaut
+        BaProfil admin = profilRepository.findById("1e")
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Profil par défaut introuvable"));
+        BaProfil membre = profilRepository.findById("ce9")
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Profil par défaut introuvable"));
 
-        BaUser user = this.mapper.maps(uDto);
+        // Préparation de l'entité
+        BaUser user = mapper.maps(uDto);
         user.setId(BaUtils.randomUUID());
-        String userPassword="1234";
-        user.setPassword(this.passwordEncoder.encode(userPassword));
+        String newPassword = BaVerificateurPassword.generateRandomPassword(8);
+        user.setPassword(passwordEncoder.encode(newPassword));
         user.setResetKey(null);
         user.setResetDate(null);
         user.setActivated(Boolean.TRUE);
+        // Sauvegarde synchronisée de l'utilisateur
+        BaUser saved = userRepository.save(user);
 
+        // Envoi d'email asynchrone
+        String email     = saved.getEmail();
+        String fullName  = saved.getNom() + " " + saved.getPrenom();
+        String subject   = "Informations de connexion";
+        String message   = "Merci pour votre création de compte. "
+                + "Votre mot de passe temporaire est : " + newPassword;
 
-        BaUser save = this.userRepository.save(user);
+        CompletableFuture.runAsync(() -> {
+            try {
+                mailService.sendMessage(email, fullName, message, subject);
+            } catch (Exception e) {
+                logService.log(new BaLogDto(
+                        EAction.VIEW,
+                        "Échec envoi email de création pour user " + saved.getId() + " : " + e.getMessage()
+                ));
+            }
+        }, taskExecutor);
 
-        mailService.sendMessage(user.getEmail(), user.getNom() + " " + user.getPrenom(), "Merci " +
-                " d'être immatriculé. Votre code est : "+userPassword,"Identifiant  de connexion");
-        return this.mapper.maps(save);
+        // Retour du DTO
+        return mapper.maps(saved);
     }
 
 
@@ -476,6 +501,54 @@ public class BaUserService {
     }
 
     /**
+     * Demander la réinitialisation du mot de passe.
+     *
+     * @param passwordDto Pour demande la réinitialisation, je prends en compte
+     *                    l'email ou le nom d'utilisateur.
+     */
+
+    public void updatePasswordReset(final BaUpdatePasswordDto passwordDto) {
+        log.info("Demande de réinitialisation de mot de passe.");
+
+        final String email = passwordDto.getEmail();
+        if (BaUtils.isEmpty(email)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'email fourni est incorrect.");
+        }
+
+        BaUser user = userRepository.findOneByEmailAndStatut(email, EStatut.A)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Aucun utilisateur actif ne correspond à cet email"));
+
+        // Génération et encodage du nouveau mot de passe
+        String newPassword = BaVerificateurPassword.generateRandomPassword(8);
+        String encodedPwd  = passwordEncoder.encode(newPassword);
+
+        // Mise à jour de l'utilisateur
+        user.setPassword(encodedPwd);
+        user.setResetDate(ZonedDateTime.now());
+        user.setActivated(Boolean.TRUE);
+        userRepository.save(user);
+
+        // Préparation de l'email
+        String fullName  = user.getNom() + " " + user.getPrenom();
+        String subject   = "Identifiants de connexion";
+        String message   = "Votre mot de passe a été réinitialisé avec succès. Votre nouveau mot de passe est : "
+                + newPassword;
+
+        // Envoi asynchrone de l'email
+        CompletableFuture.runAsync(() -> {
+            try {
+                mailService.sendMessage(email, fullName, message, subject);
+            } catch (Exception e) {
+                logService.log(new BaLogDto(
+                        EAction.UPDATE,
+                        "Échec envoi email réinitialisation pour user " + user.getId() + " : " + e.getMessage()
+                ));
+            }
+        }, taskExecutor);
+    }
+
+    /**
      * Authenticate JWT.
      *
      * @param authentication
@@ -504,5 +577,44 @@ public class BaUserService {
                     usr.setActivated(Boolean.TRUE);
                     userRepository.save(usr);
                 });
+    }
+
+    public BaUserDto addRoleToUser(String userId, String roleId) {
+        BaUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilisateur introuvable avec l'ID : " + userId));
+
+        BaRole role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rôle introuvable avec l'ID : " + roleId));
+
+        // Vérifier si le rôle est déjà associé au profil
+        if (user.getRoles().contains(role)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Le rôle est déjà associé a ce utilisateur"
+            );
+        }
+
+        // Ajouter le rôle au profil
+        user.getRoles().add(role);
+
+        return mapper.maps(userRepository.save(user));
+    }
+
+    /**
+     * Service pour enlever un role à un utilisateur.
+     * @param userId: L'identifiant de l'utilisateur.
+     * @param roleId: L'identifiant du rôle.
+     * @return Un utilisateur avec le rôle enlevé.
+     */
+    public BaUserDto removeRoleToUser(String userId, String roleId) {
+        BaUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilisateur introuvable avec l'ID : " + userId));
+
+        BaRole role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rôle introuvable avec l'ID : " + roleId));
+
+        // Ajouter le rôle au profil
+        user.getRoles().remove(role);
+
+        return mapper.maps(userRepository.save(user));
     }
 }

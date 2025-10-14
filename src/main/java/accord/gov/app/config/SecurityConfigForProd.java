@@ -115,27 +115,24 @@ public class SecurityConfigForProd {
 
         http.authorizeHttpRequests(auth -> {
             auth
+                    // Ressources publiques
                     .requestMatchers(BaConstants.URL.BASE_URL + "/activate").permitAll()
-                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.USER + "/{id}/activate").permitAll()
-                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.USER).permitAll()
-                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.LANGUE+ "/").permitAll()
-                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.DOMAINE+ "/").permitAll()
-                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.DOMAINE).permitAll()
-                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.LANGUE).permitAll()
-                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT).permitAll()
-                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.TYPE_ACCORD).permitAll()
-                    .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.PARTIE+"/**").permitAll()
+                    .requestMatchers(HttpMethod.POST,BaConstants.URL.BASE_URL+BaConstants.URL.USER).permitAll()
+                    .requestMatchers(BaConstants.URL.BASE_URL+BaConstants.URL.USER+"/password/update").permitAll()
                     .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.AUTHENTICATE).permitAll()
-                    .requestMatchers(HttpMethod.GET, BaConstants.URL.CSRF_TOKEN).permitAll()
+                    .requestMatchers(HttpMethod.POST, BaConstants.URL.CSRF_TOKEN).permitAll()
                     .requestMatchers(BaConstants.URL.BASE_URL + "/reset/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, BaConstants.URL.BASE_URL + BaConstants.URL.PRODUCT)
-                    .hasAuthority(BaRolesConstants.BA_ADMIN)
-                    .requestMatchers(BaConstants.URL.BASE_URL + "/**").authenticated()
+
+                    // Ressources protégées
+                      .requestMatchers( BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT+"/confidentiel").hasAuthority(BaRolesConstants.BA_DG)
+                      .requestMatchers( BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT+"/confidentiel/**").hasAuthority(BaRolesConstants.BA_DG)
+                      .requestMatchers( BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT+"/all").hasAuthority(BaRolesConstants.BA_DG)
+
+                    // Toutes les autres requêtes doivent être authentifiées
                     .anyRequest().authenticated();
         });
-        http.with(securityConfigurerAdapter(), a -> {
 
-        });
+        http.with(securityConfigurerAdapter(), a -> {});
 
 
         return http.build();

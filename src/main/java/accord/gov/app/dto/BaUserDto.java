@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.ZonedDateTime;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -61,14 +62,13 @@ public class BaUserDto {
      */
     private Boolean activated = Boolean.FALSE;
 
-    @NotEmpty(message = "Le téléphone est obligatoire")
     private String telephone;
 
     private String idProfil;
 
     private String libelleProfil;
 
-    private Set<BaRoleDto> roles;
+    private Set<BaRoleDto> roles= new HashSet<>();;
 
     /**
      * Date de la dernière connexion.
@@ -84,7 +84,6 @@ public class BaUserDto {
     private BaCredentialDto credentials;
 
     private String indicatifPays;
-
     /**
      * Constructeur initialisation id.
      *

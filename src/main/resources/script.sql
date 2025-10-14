@@ -1,17 +1,17 @@
 -- Table ba_role
 INSERT INTO ba_role (created_by, created_date, last_modified_by, last_modified_date, id, code, libelle)
-VALUES ('yabolank', '2024-05-24 14:48:47.300', 'yabolank', '2024-05-24 14:48:47.309',
+VALUES ('maneLion', '2024-05-24 14:48:47.300', 'maneLion', '2024-05-24 14:48:47.309',
         '4ab',
         'BA_ADMIN', 'Administrateur'),
-       ('yabolank', '2024-05-24 14:48:47.300', 'yabolank', '2024-05-24 14:48:47.309',
+       ('maneLion', '2024-05-24 14:48:47.300', 'maneLion', '2024-05-24 14:48:47.309',
         'e28',
         'BA_CONNECT', 'Connexion');
 
 -- Table ba_profil
 INSERT INTO ba_profil (statut, created_by, created_date, last_modified_by, last_modified_date, id, libelle)
-VALUES ('A', 'yabolank', '2024-05-24 14:48:47.300', 'yabolank', '2024-05-24 14:48:47.309',
+VALUES ('A', 'maneLion', '2024-05-24 14:48:47.300', 'maneLion', '2024-05-24 14:48:47.309',
         '1e', 'Administrateur'),
-       ('A', 'yabolank', '2024-05-24 14:48:47.300', 'yabolank', '2024-05-24 14:48:47.309',
+       ('A', 'maneLion', '2024-05-24 14:48:47.300', 'maneLion', '2024-05-24 14:48:47.309',
         'ce9', 'Membre');
 
 -- Table ba_profils_roles(admin)

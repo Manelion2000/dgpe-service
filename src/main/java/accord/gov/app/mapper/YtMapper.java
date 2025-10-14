@@ -150,6 +150,7 @@ public interface YtMapper {
     @Mappings({
             @Mapping(source = "profil.id", target = "idProfil"),
             @Mapping(source = "profil.libelle", target = "libelleProfil"),
+            @Mapping(source = "roles", target = "roles")
     })
     BaUserDto maps(BaUser entity);
 

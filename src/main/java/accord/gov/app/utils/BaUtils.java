@@ -11,10 +11,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.UUID;
 
 @Slf4j
 public class BaUtils {
+
+    private static final String DIGITS = "0123456789";
+    private static final String ALPHANUM = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+
 
     /**
      * Genère et retourne un idantifiant unique.
@@ -44,7 +51,7 @@ public class BaUtils {
      * @return String: le nombre généré
      */
     public static String numberGenerator(final int taille) {
-        String caracteres = "0123456789";
+        String caracteres = "0123456789abcdefghijklmopqrstuvwxyzABCDEFGHIJKLKMOPQRSTUVWZ";
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < taille; i++) {
             int index = (int) (caracteres.length() * Math.random());

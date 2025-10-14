@@ -356,6 +356,15 @@ public class ParamController {
     public ResponseEntity<List<BaDocumentDto>> getAllDocActive(){
         return ResponseEntity.ok((paramService.getAllDocumentsByStatutAndConfidentialite(EStatut.A, EConfidentiel.NON)));
     }
+    /**
+     * Liste des documents actifs: uniquement accessible par le DG(car contiennent des documents confidentiels aussi)
+     * @return une liste de documents actifs
+     */
+
+    @GetMapping(BaConstants.URL.DOCUMENT+"/all")
+    public ResponseEntity<List<BaDocumentDto>> getAll(){
+        return ResponseEntity.ok((paramService.getAllDocument()));
+    }
 
     /**
      * Fonction de récupération d’un document principale par son identifiant

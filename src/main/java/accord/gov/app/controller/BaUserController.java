@@ -21,14 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -40,6 +33,7 @@ import java.util.List;
 @RequestMapping(BaConstants.URL.BASE_URL)
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin(origins= {"*"})
 public class BaUserController {
 
     private final BaUserService userService;
@@ -242,6 +236,17 @@ public class BaUserController {
         this.userService.changePassword(updatePasswordDto);
         return ResponseEntity.ok().build();
     }
+    /**
+     * Changement de mot de passe par l'utilisateur lui-même connecté.
+     *
+     * @param updatePasswordDto : le user
+     * @return {@link ResponseEntity}
+     */
+    @PatchMapping(BaConstants.URL.USER + "/password/update")
+    public ResponseEntity<Void> UpdateUser(@RequestBody @Valid final BaUpdatePasswordDto updatePasswordDto) {
+        this.userService.updatePasswordReset(updatePasswordDto);
+        return ResponseEntity.ok().build();
+    }
 
 
     /**
@@ -292,6 +297,32 @@ public class BaUserController {
     public ResponseEntity<String> activateUser(@PathVariable(name = "id") final String idUser) {
         userService.activateUser(idUser);
         return new ResponseEntity<>("L'activation a reussi", HttpStatus.OK);
+    }
+
+    /**
+     * endpoint pour ajouter role to user
+     * @param userId: L'identifiant de l'utilisateur.
+     * @param roleId: L'identifiant du rôle.
+     * @return Un utilisateur avec le rôle ajouté
+     */
+
+    @PostMapping(BaConstants.URL.ROLE+ "/{userId}/{roleId}")
+    public ResponseEntity<BaUserDto> addRoleToUser(@PathVariable final String userId, @PathVariable final String roleId) {
+        BaUserDto updateUser = userService.addRoleToUser(userId, roleId);
+        return ResponseEntity.ok(updateUser);
+    }
+
+    /**
+     * endpoint to remove role from user
+     * @param userId: L'identifiant de l'utilisateur.
+     * @param roleId: L'identifiant du rôle.
+     * @return Un utilisateur avec le rôle enlevé.
+     */
+    @DeleteMapping(BaConstants.URL.ROLE + "/{userId}/{roleId}")
+    public ResponseEntity<BaUserDto> removeRoleFromUser(
+            @PathVariable final String userId,
+            @PathVariable final String roleId) {
+        return ResponseEntity.ok(userService.removeRoleToUser(userId, roleId));
     }
 
 }

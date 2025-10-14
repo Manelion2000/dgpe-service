@@ -90,11 +90,11 @@ public interface BaDocumentRepository extends JpaRepository<BaDocument, String>,
                 LEFT JOIN ba_document_domaine dd ON d.id = dd.document_id
                 LEFT JOIN ba_document_partie dp ON d.id = dp.document_id
                 WHERE (:typeId IS NULL OR d.type_document_id = CAST(:typeId AS text))
-                  AND (:nature IS NULL OR d.nature_document = :nature)
-                  AND (array_length(CAST(:langueIds AS text[]), 1) IS NULL OR dl.langue_id = ANY(CAST(:langueIds AS text[])))
-                  AND (array_length(CAST(:domaineIds AS text[]), 1) IS NULL OR dd.domaine_id = ANY(CAST(:domaineIds AS text[])))
-                  AND (array_length(CAST(:partieIds AS text[]), 1) IS NULL OR dp.partie_id = ANY(CAST(:partieIds AS text[])))
-                  AND (array_length(CAST(:keywords AS text[]), 1) IS NULL OR (
+                  OR (:nature IS NULL OR d.nature_document = :nature)
+                  OR (array_length(CAST(:langueIds AS text[]), 1) IS NULL OR dl.langue_id = ANY(CAST(:langueIds AS text[])))
+                  OR (array_length(CAST(:domaineIds AS text[]), 1) IS NULL OR dd.domaine_id = ANY(CAST(:domaineIds AS text[])))
+                  OR (array_length(CAST(:partieIds AS text[]), 1) IS NULL OR dp.partie_id = ANY(CAST(:partieIds AS text[])))
+                  OR (array_length(CAST(:keywords AS text[]), 1) IS NULL OR (
                         unaccent(LOWER(d.mot_cle)) LIKE ANY(CAST(:keywords AS text[]))
                         OR unaccent(LOWER(d.resume)) LIKE ANY(CAST(:keywords AS text[]))
                   ))

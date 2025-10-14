@@ -6,17 +6,20 @@ spring:
     name: accord-Service
   profiles:
     active: prod  # profil par défaut
+
+  # Configuration du service mail
   mail:
-    host: mailer.gov.bf
+    host: smtp.gmail.com
     port: 587
     username: alertesmae@gmail.com
     password: 'fevh duqq bksu zlcw'
     protocol: smtp
-    properties.mail.smtp:
-      auth: true
-      starttls.enable: true
-      ssl.trust: ${spring.mail.host}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.ssl.trust: smtp.gmail.com
     test-connection: false
+
   servlet:
     multipart:
       max-file-size: 5MB

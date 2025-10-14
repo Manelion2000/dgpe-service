@@ -25,7 +25,6 @@ public class BaUpdatePasswordDto implements Serializable {
 
   private String ancien;
 
-  @NotEmpty(message = "Le nouveau mot de passe est obligatoire")
   private String nouveau;
 
   private String confirmer;

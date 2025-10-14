@@ -3,14 +3,7 @@ package accord.gov.app.model;
 import accord.gov.app.enums.ESexe;
 import accord.gov.app.utils.BaUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -18,7 +11,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.ZonedDateTime;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Entité représentant un utilisateur de l'application.
@@ -102,6 +97,12 @@ public class BaUser extends BaAbstractAuditingEntity {
 
     @Column(name = "indicatif_pays")
     private String indicatifPays;
+
+    @ManyToMany
+    @JoinTable(name = "ba_user_roles",
+            joinColumns = {@JoinColumn(name = "user_id")},
+            inverseJoinColumns = {@JoinColumn(name = "role_id")})
+    private Set<BaRole> roles = new HashSet<>();
 
     /**
      * Constructeur initialisation id.
