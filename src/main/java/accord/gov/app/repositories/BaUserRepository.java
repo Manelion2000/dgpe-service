@@ -65,18 +65,18 @@ public interface BaUserRepository extends JpaRepository<BaUser, String> {
     boolean existsByEmailIgnoreCase(String email);
 
 
-    /**
+   /* *//**
      * Controler la duplication de l'utilisateur
      * par téléphone.
      *
      * @param id
      * @param telephone
      * @return un booléen
-     */
+     *//*
     @Query("SELECT COUNT(*) > 0 FROM BaUser e "
             + "WHERE  (:id IS NULL AND upper(e.telephone) = upper(:telephone)) "
             + "OR (:id IS NOT NULL AND e.id != :id AND upper(e.telephone) = upper(:telephone))")
-    Boolean checkDuplicateTelephone(@Param("id") String id, @Param("telephone") String telephone);
+    Boolean checkDuplicateTelephone(@Param("id") String id, @Param("telephone") String telephone);*/
 
     /**
      * Controler la duplication de l'utilisateur

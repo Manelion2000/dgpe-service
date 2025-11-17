@@ -72,8 +72,7 @@ public class BaUser extends BaAbstractAuditingEntity {
     @Column(name = "last_connexion_date")
     private ZonedDateTime lastConnexionDate;
 
-    @NotNull
-    @Column(name = "telephone", nullable = false, unique = true)
+    @Column(name = "telephone", nullable = true)
     private String telephone;
 
     @ManyToOne

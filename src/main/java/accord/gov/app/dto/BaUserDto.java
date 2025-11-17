@@ -100,12 +100,20 @@ public class BaUserDto {
      */
     @Override
     public String toString() {
-        return "User{id='" + id + "', username='"
-                + username
-                + ", nom=''" + nom + "', prenom='" + prenom
-                + "', email='" + email + "', locked=" + locked + ", telephone='"
-                + telephone + ", profil=" + idProfil + "}";
+        return "User{" +
+                "id='" + id + '\'' +
+                ", username='" + username + '\'' +
+                ", nom='" + nom + '\'' +
+                ", prenom='" + prenom + '\'' +
+                ", email='" + email + '\'' +
+                ", locked=" + locked +
+                ", resetKey='" + resetKey + '\'' +
+                ", resetDate=" + resetDate +
+                ", telephone=" + telephone +
+                ", profil=" + idProfil +
+                '}';
     }
+
 
     /**
      * Le nom d'utilisateur est enregistré toujours en majuscule.

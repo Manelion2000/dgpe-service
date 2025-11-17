@@ -85,9 +85,7 @@ public class BaUserService {
         if (userRepository.existsByUsernameIgnoreCase(uDto.getUsername())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le nom d'utilisateur est déjà occupé.");
         }
-        if (userRepository.existsByTelephoneIgnoreCase(uDto.getTelephone())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le numéro de téléphone est déjà utilisé.");
-        }
+
         if (uDto.getEmail() != null && userRepository.existsByEmailIgnoreCase(uDto.getEmail())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'email est déjà utilisé.");
         }
@@ -96,6 +94,7 @@ public class BaUserService {
         BaProfil admin = profilRepository.findById("1e")
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "Profil par défaut introuvable"));
+
         BaProfil membre = profilRepository.findById("ce9")
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "Profil par défaut introuvable"));
@@ -103,6 +102,7 @@ public class BaUserService {
         // Préparation de l'entité
         BaUser user = mapper.maps(uDto);
         user.setId(BaUtils.randomUUID());
+        user.setProfil(admin);
         String newPassword = BaVerificateurPassword.generateRandomPassword(8);
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setResetKey(null);
@@ -160,9 +160,9 @@ public class BaUserService {
                     uDto.setLocked(u.getLocked());
                 });
 
-        if (this.userRepository.checkDuplicateTelephone(id, uDto.getTelephone())) {
+       /* if (this.userRepository.checkDuplicateTelephone(id, uDto.getTelephone())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le numéro de téléphone est déjà utilisé.");
-        }
+        }*/
 
         if (this.userRepository.checkDuplicateEmail(id, uDto.getEmail())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'email de téléphone est déjà utilisé.");
@@ -406,13 +406,30 @@ public class BaUserService {
      *
      * @param username
      * @return un optional de l'utilisateur
-     */
+     *//*
     public Optional<BaUserDto> getOneByUsername(final String username) {
         final Optional<BaUser> opt = this.userRepository
                 .findOneByUsernameIgnoreCaseAndStatut(username, EStatut.A);
         return opt.map(entity -> {
             final BaUserDto dto = mapper.maps(entity);
             dto.setRoles(this.profilRepository.getReferenceById(dto.getIdProfil()).getRoles()
+                    .stream().map(mapper::maps).collect(Collectors.toSet()));
+            return dto;
+        });
+    }
+*/
+    /**
+     * Recupere un utilisateur par son nom d'utilisateur.
+     *
+     * @param username
+     * @return un optional de l'utilisateur
+     */
+    public Optional<BaUserDto> getOneByUsername(final String username) {
+        final Optional<BaUser> opt = this.userRepository
+                .findOneByUsernameIgnoreCaseAndStatut(username, EStatut.A);
+        return opt.map(entity -> {
+            final BaUserDto dto = mapper.maps(entity);
+            dto.setRoles(this.userRepository.getReferenceById(dto.getId()).getRoles()
                     .stream().map(mapper::maps).collect(Collectors.toSet()));
             return dto;
         });
