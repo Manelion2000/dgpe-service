@@ -1014,7 +1014,7 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
                     HttpStatus.BAD_REQUEST, "Le fichier n'est rattaché ni à un document principal ni à un document affilié.");
         }
 
-        // ➡️ Supprimer le fichier physique sur disque AVANT suppression en base
+        // Supprimer le fichier physique sur disque AVANT suppression en base
         deletePhysicalFile(fichier.getUrl());
 
         // Supprimer l’entrée en base

@@ -73,11 +73,11 @@ public class ParamController {
      * @return BaTypeAccordDto
      */
     @PutMapping(BaConstants.URL.TYPE_ACCORD + "/{id}")
-    public ResponseEntity<BaApiResponse<BaTypeAccordDto>> updateTypeAccord(
+    public ResponseEntity<BaTypeAccordDto> updateTypeAccord(
             @PathVariable final  String id,
             @Valid @RequestBody final BaTypeAccordDto dto) {
         BaTypeAccordDto updated = paramService.updateTypeAccord(id, dto);
-        return ResponseEntity.ok(new BaApiResponse<>("Type d’accord mis à jour avec succès", HttpStatus.OK.value(), updated));
+        return new ResponseEntity<>(updated,HttpStatus.OK);
     }
 
     /**
@@ -133,6 +133,17 @@ public class ParamController {
     public ResponseEntity<BaApiResponse<Void>> deleteTypeDodAff(@PathVariable final String id) {
         paramService.deleteTypeDocumentAffilie(id);
         return ResponseEntity.noContent().build();
+    }
+/**
+     * Fonction de modifications d’un type d’accord
+     * @param id identifiant du type d’accord
+     * @return confirmation de suppression
+     */
+    @PutMapping(BaConstants.URL.TYPE_DOCUMENT_AFF + "/{id}")
+    public ResponseEntity<BaTypeDocumentAffilieDto> updateTypeAffilie(@PathVariable final String id,
+     @Valid @RequestBody final  BaTypeDocumentAffilieDto dto) {
+       BaTypeDocumentAffilieDto updated= paramService.updateTypeDocumentAffilie(id,dto);
+        return  ResponseEntity.ok(updated);
     }
 
     //========================= GESTION DES LANGUES=============================================
@@ -288,7 +299,7 @@ public class ParamController {
             @PathVariable final String id,
             @Valid @RequestBody final  BaPartieDto dto) {
         BaPartieDto updated = paramService.updatePartie(id, dto);
-        return new ResponseEntity<>(updated, HttpStatus.OK);
+        return ResponseEntity.ok(updated);
     }
 
     /**
@@ -600,7 +611,7 @@ public class ParamController {
      * @param download;
      * @return un byte
      */
-    @GetMapping(BaConstants.URL.DOCUMENT + "/telecharger/{idDoc}")
+    @GetMapping(BaConstants.URL.DOCUMENT+"/telecharger/{idDoc}")
     public ResponseEntity<byte[]> lire(
             @PathVariable final String idDoc,
             @RequestParam(name = "download", defaultValue = "true") boolean download) {

@@ -90,7 +90,7 @@ public class BaUserDetailsService implements UserDetailsService {
             Optional<BaUser> userFromDatabase = this.userRepository
                     .findOneByUsernameIgnoreCaseAndStatut(username, EStatut.A);
             return userFromDatabase.map(user -> {
-                List<GrantedAuthority> ga = user.getProfil().getRoles().stream()
+                List<GrantedAuthority> ga = user.getRoles().stream()
                         .map(authority -> new SimpleGrantedAuthority(authority.getCode()))
                         .collect(Collectors.toList());
 

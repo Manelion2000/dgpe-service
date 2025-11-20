@@ -122,6 +122,8 @@ public class SecurityConfigForProd {
                     .requestMatchers(BaConstants.URL.BASE_URL + BaConstants.URL.AUTHENTICATE).permitAll()
                     .requestMatchers(HttpMethod.POST, BaConstants.URL.CSRF_TOKEN).permitAll()
                     .requestMatchers(BaConstants.URL.BASE_URL + "/reset/**").permitAll()
+                    .requestMatchers( BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT+"/telecharger").permitAll()
+
 
                     // Ressources protégées
                       .requestMatchers( BaConstants.URL.BASE_URL + BaConstants.URL.DOCUMENT+"/confidentiel").hasAuthority(BaRolesConstants.BA_DG)
