@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # accord-service-backend
+=======
+# dgpe-service-backend
+>>>>>>> 1280c6aed47fe1bf6bbfc7da991332a4805810aa
 
 
 
@@ -15,14 +19,22 @@ Already a pro? Just edit this README.md and make it your own. Want to make it ea
 
 ```
 cd existing_repo
+<<<<<<< HEAD
 git remote add origin http://qoc.quitusdemat.gov.bf/traites-accords/accord-service-backend.git
+=======
+git remote add origin http://qoc.quitusdemat.gov.bf/diaspora/dgpe-service-backend.git
+>>>>>>> 1280c6aed47fe1bf6bbfc7da991332a4805810aa
 git branch -M main
 git push -uf origin main
 ```
 
 ## Integrate with your tools
 
+<<<<<<< HEAD
 - [ ] [Set up project integrations](http://qoc.quitusdemat.gov.bf/traites-accords/accord-service-backend/-/settings/integrations)
+=======
+- [ ] [Set up project integrations](http://qoc.quitusdemat.gov.bf/diaspora/dgpe-service-backend/-/settings/integrations)
+>>>>>>> 1280c6aed47fe1bf6bbfc7da991332a4805810aa
 
 ## Collaborate with your team
 
