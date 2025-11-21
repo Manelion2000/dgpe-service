@@ -31,6 +31,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
@@ -244,11 +245,7 @@ public class BaUserService {
         return ou.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilisateur non connecté."));
     }
 
-    /**
-     * Avoir la liste des roles.
-     *
-     * @return Liste des roles
-     */
+    /*
     public List<BaRoleDto> fetchRoles() {
         log.info("Recupère la liste des rôles.");
         logService.log(new BaLogDto(EAction.VIEW, "Roles"));
@@ -261,7 +258,59 @@ public class BaUserService {
                 .filter(Objects::nonNull)
                 .map(mapper::maps)
                 .collect(Collectors.toList());
+    }*/
+
+    /**
+     * Avoir la liste des roles.
+     *
+     * @return Liste des roles
+     */
+    public List<BaRoleDto> fetchRoles() {
+
+        log.info("Récupère la liste des rôles.");
+        logService.log(new BaLogDto(EAction.VIEW, "Consultation liste des rôles"));
+
+        // 1. Tous les rôles en base
+        List<BaRole> allRoles = roleRepository.findAll();
+
+        // 2. Infos utilisateur connecté
+        BaUserDto currentUser = this.getUserInfoWithMoreDetails();
+
+        // 3. Extraire les codes des rôles du user connecté
+        Set<String> userRoleCodes = currentUser.getRoles().stream()
+                .map(BaRoleDto::getCode)
+                .collect(Collectors.toSet());
+
+        log.debug("Rôles utilisateur connecté : {}", userRoleCodes);
+
+        // 4. Liste filtrée selon la règle métier
+        List<BaRole> filtered;
+
+        if (userRoleCodes.contains("BA_DG")) {
+            // BA_DG ne peut voir QUE son rôle
+            filtered = allRoles.stream()
+                    .filter(r -> r.getCode().equals("BA_DG"))
+                    .toList();
+
+        } else if (userRoleCodes.contains("BA_ADMIN")) {
+            // BA_ADMIN voit tout sauf BA_DG
+            filtered = allRoles.stream()
+                    .filter(r -> !r.getCode().equals("BA_DG"))
+                    .toList();
+
+        } else {
+            // Tous les autres voient tout
+            filtered=List.of();
+        }
+
+        // 5. Convertir vers DTO
+        return filtered.stream()
+                .map(mapper::maps)
+                .toList();
     }
+
+
+
 
     /**
      * Pour ajouter un role.

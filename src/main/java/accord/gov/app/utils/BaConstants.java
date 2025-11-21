@@ -27,6 +27,8 @@ public class BaConstants {
         public static final String PARTIE = "/parties";
         public static final String DOMAINE = "/domaines";
         public static final String PAYS="/pays";
+        public static final String LOGS="/logs";
+
 
     }
 

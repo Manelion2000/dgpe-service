@@ -1,6 +1,7 @@
 package accord.gov.app.service;
 
 import accord.gov.app.dto.BaLogDto;
+import accord.gov.app.dto.ConfidentialConsultationDto;
 import accord.gov.app.mapper.YtMapper;
 import accord.gov.app.model.BaLog;
 import accord.gov.app.repositories.BaLogRepository;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.factory.Mappers;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @Transactional
@@ -37,5 +40,25 @@ public class BaLogService {
         final BaLog entity = mapper.maps(logDto);
         entity.setIpAdresse(BaUtils.retrieveIP(request));
         this.logRepository.save(entity);
+    }
+
+    //=========== GESTION DES LOGS============================
+    /**
+     * Récupère la liste des consultations de documents confidentiels.
+     */
+    public List<ConfidentialConsultationDto> getConfidentialConsultations() {
+
+        List<BaLog> logs = logRepository.findConfidentialLogs();
+
+        return logs.stream()
+                .map(log -> new ConfidentialConsultationDto(
+                        log.getCreatedBy(),
+                        log.getIpAdresse(),
+                        log.getCreatedDate(),
+                        log.getAction().name(),
+                        log.getSujet(),
+                        log.getDetails()
+                ))
+                .toList();
     }
 }

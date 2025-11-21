@@ -638,10 +638,23 @@ public BaDocumentDto updateDocument(String id, BaDocumentDto dto) {
 
     @Override
     public BaDocumentDto getByDocumentById(String id) {
-        BaDocument entity = documentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Document introuvable"));
-        logService.log(new BaLogDto(EAction.VIEW, "Consultation du document ID: " + id));
-        return mapper.maps(entity);
+        BaDocument doc = documentRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable"));
+
+        // Si document confidentiel → log détaillé
+        if (doc.getConfidentialite() == EConfidentiel.OUI) {
+            logService.log(new BaLogDto(
+                    EAction.VIEW,
+                    "Consultation du document confidentiel libelle=" + doc.getIntitule()
+            ));
+        } else {
+            logService.log(new BaLogDto(
+                    EAction.VIEW,
+                    "Consultation du document public libelle=" + doc.getIntitule()
+            ));
+        }
+
+        return mapper.maps(doc);
     }
 
     /**
@@ -1304,6 +1317,9 @@ public ResponseEntity<byte[]> telechargerFichier(String idFichier, boolean downl
         // 5. Construire la réponse HTTP complète
         return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
     }
+
+
+    //=========== GESTION DES STATISTIQUES======================
 
     /**
      * Statistique par Nature de document
